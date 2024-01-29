@@ -9,7 +9,7 @@ contract XBlockStratUtil is Test {
     uint256 constant FORK_BLOCK_NUMBER = 19113518; 
 
     function selectEthFork() internal {
-        uint256 fork = vm.createFork(vm.envString("RPC_URL_ETH"));
+        uint256 fork = vm.createFork("https://eth.llamarpc.com");
         vm.selectFork(fork);
         vm.rollFork(FORK_BLOCK_NUMBER);
     } 
