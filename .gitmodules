@@ -7,3 +7,6 @@
 [submodule "lib/rain.orderbook"]
 	path = lib/rain.orderbook
 	url = https://github.com/rainlanguage/rain.orderbook.git
+[submodule "lib/view-quoter-v3"]
+	path = lib/view-quoter-v3
+	url = https://github.com/Uniswap/view-quoter-v3

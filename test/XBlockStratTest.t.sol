@@ -7,6 +7,6 @@ contract XBlockStratTest is XBlockStratUtil {
 
     function testStrategyExpression() public {
         setUp();
-        console2.log(block.timestamp); 
+        console2.log(block.timestamp);
     }
 }
