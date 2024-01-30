@@ -13,11 +13,18 @@ import {IOrderBookV3, OrderBook} from "rain.orderbook/src/concrete/ob/OrderBook.
 import {ISubParserV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/ISubParserV2.sol";
 import {OrderBookSubParser} from "rain.orderbook/src/concrete/parser/OrderBookSubParser.sol";
 import {UniswapWords} from "rain.uniswap/src/concrete/UniswapWords.sol";
-// import "view-quoter-v3/contracts/Quoter.sol";
+import {RouteProcessorOrderBookV3ArbOrderTaker} from "rain.orderbook/src/concrete/arb/RouteProcessorOrderBookV3ArbOrderTaker.sol";
+import {IOrderBookV3ArbOrderTaker} from "rain.orderbook/src/interface/unstable/IOrderBookV3ArbOrderTaker.sol";
+import {ICloneableFactoryV2} from "src/interface/ICloneableFactoryV2.sol";
+import {ROUTE_PROCESSOR} from "src/XBlockStrat.sol";
+import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
+import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol"; 
 import "rain.uniswap/src/lib/v3/LibDeploy.sol";
 
 
 contract XBlockStratUtil is Test {
+
+    ICloneableFactoryV2 constant CLONE_FACTORY = ICloneableFactoryV2(0x27C062142b9DF4D07191bd2127Def504DC9e9937);
 
     uint256 constant FORK_BLOCK_NUMBER = 19113518; 
 
@@ -34,6 +41,9 @@ contract XBlockStratUtil is Test {
     IOrderBookV3 public ORDERBOOK;
     ISubParserV2 public OB_SUPARSER;
     ISubParserV2 public UNISWAP_WORDS;
+    IOrderBookV3ArbOrderTaker public ARB_IMPLEMENTATION;
+    IOrderBookV3ArbOrderTaker public ARB_INSTANCE;
+
 
 
     function setUp() public {
@@ -53,7 +63,36 @@ contract XBlockStratUtil is Test {
 
         ORDERBOOK = new OrderBook();
         OB_SUPARSER = new OrderBookSubParser();
-        UNISWAP_WORDS = LibDeploy.newUniswapWords(vm); 
+        UNISWAP_WORDS = LibDeploy.newUniswapWords(vm);
+        ARB_IMPLEMENTATION = new RouteProcessorOrderBookV3ArbOrderTaker();
+        address ARB_INSTANCE_ADDRESS;
+        {    
+            bytes memory ungatedArbExpression = "";
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(ungatedArbExpression);
+            bytes memory implementationData = abi.encode(address(ROUTE_PROCESSOR));
+            EvaluableConfigV3 memory evaluableConfig = EvaluableConfigV3(EXPRESSION_DEPLOYER,bytecode,constants);
+            OrderBookV3ArbOrderTakerConfigV1 memory cloneConfig = OrderBookV3ArbOrderTakerConfigV1(
+                address(ORDERBOOK),
+                evaluableConfig,
+                implementationData
+            );
+            bytes memory encodedConfig = abi.encode(cloneConfig);
+
+            vm.recordLogs();
+            CLONE_FACTORY.clone(address(ARB_IMPLEMENTATION),encodedConfig);
+            Vm.Log[] memory entries = vm.getRecordedLogs();
+            for (uint256 j = 0; j < entries.length; j++) {
+            if (entries[j].topics[0] == keccak256("NewClone(address,address,address)")) {
+                (,,ARB_INSTANCE_ADDRESS) = abi.decode(entries[j].data, (address, address, address));
+               
+            } 
+        }  
+        ARB_INSTANCE = IOrderBookV3ArbOrderTaker(ARB_INSTANCE_ADDRESS);
+
+        }
+
+
+
 
     }
 

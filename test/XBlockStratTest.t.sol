@@ -6,7 +6,6 @@ import {XBlockStratUtil} from "test/util/XBlockStratUtils.sol";
 contract XBlockStratTest is XBlockStratUtil {
 
     function testStrategyExpression() public {
-        setUp();
         console2.log(block.timestamp);
     }
 }
