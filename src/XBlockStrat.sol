@@ -132,17 +132,17 @@ bytes constant RAINSTRING_CALCULATE_ORDER_SELL =
     // DOWN. Therefore we want to sell LESS, and vice versa, so we multiple by the
     // du ratio.
     "amount-usdt18: decimal18-mul(jittered-amount-usdt18 decimal18-power(du-ratio 7e17)),"
-    // Sushi needs the usdt amount as 6 decimals (tether's native size).
+    // UniswapV3 needs the usdt amount as 6 decimals (tether's native size).
     "amount-usdt6: decimal18-scale-n<6>(amount-usdt18),"
     // Token in for uniswap is ob's token out, and vice versa.
     // We want the timestamp as well as the `xblock` amount that uniswapv3 wants in.
     // XBLOCK is already 18 decimals, so we don't need to scale it.
     "xblock-amount18: uniswap-v3-exact-input(usdt-token-address xblock-token-address amount-usdt6 3000),"
     // Don't allow the price to change this block before this trade.
-    // ":ensure<6>(equal-to(uniswap-v3-twap(usdt-token-address 6 xblock-token-address 18 2 1 3000) uniswap-v3-twap(usdt-token-address 6 xblock-token-address 18 0 0 3000))),"
-    // Order output max is the xblock amount from sushi.
+    ":ensure<6>(equal-to(uniswap-v3-twap(usdt-token-address 6 xblock-token-address 18 2 1 3000) uniswap-v3-twap(usdt-token-address 6 xblock-token-address 18 0 0 3000))),"
+    // Order output max is the xblock amount from UniswapV3.
     "order-output-max18: xblock-amount18,"
-    // IO ratio is the usdt target divided by the xblock amount from sushi.
+    // IO ratio is the usdt target divided by the xblock amount from UniswapV3.
     // 8e16 is subtracted from the target to give a small bounty to the clearer
     // to cover gas. This was empirically measured to clear about 90% of trades.
     "io-ratio: decimal18-div(decimal18-sub(amount-usdt18 8e16) order-output-max18)"
@@ -174,19 +174,19 @@ bytes constant RAINSTRING_CALCULATE_ORDER_BUY =
     // DOWN. Therefore we want to buy MORE, and vice versa, so we multiply by the
     // ud ratio.
     "amount-usdt18: decimal18-mul(jittered-amount-usdt18 ud-ratio),"
-    // Sushi needs the usdt amount as 6 decimals (tether's native size).
+    // UniswapV3 needs the usdt amount as 6 decimals (tether's native size).
     "amount-usdt6: decimal18-scale-n<6>(amount-usdt18),"
     // Token out for uni is in for ob, and vice versa.
-    // We want the timestamp as well as the xblock amount that sushi will give us.
+    // We want the timestamp as well as the xblock amount that UniswapV3 will give us.
     // XBLOCK is already 18 decimals, so we don't need to scale it.
     "xblock-amount18: uniswap-v3-exact-output(xblock-token-address usdt-token-address amount-usdt6 3000),"
-    // Don't allow the price to change this block before this xblock.
-    // ":ensure<6>(less-than(last-price-timestamp block-timestamp())),"
+    // Don't allow the price to change this block before this trade.
+    ":ensure<6>(equal-to(uniswap-v3-twap(usdt-token-address 6 xblock-token-address 18 2 1 3000) uniswap-v3-twap(usdt-token-address 6 xblock-token-address 18 0 0 3000))),"
     // Order output max is the usdt amount as decimal 18.
     // Adding a 8e16 bounty to the target to cover gas. This was empirically
     // measured to clear about 90% of trades.
     "order-output-max18: decimal18-add(amount-usdt18 8e16),"
-    // IO ratio is the xblock amount from sushi divided by the usdt target.
+    // IO ratio is the xblock amount from UniswapV3 divided by the usdt target.
     "io-ratio: decimal18-div(xblock-amount18 order-output-max18)"
     // end calculate order
     ";";
