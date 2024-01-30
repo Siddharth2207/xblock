@@ -9,24 +9,46 @@ import {IParserV1} from "rain.orderbook/lib/rain.interpreter/src/interface/IPars
 import {IInterpreterStoreV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterStoreV2.sol";
 import {IInterpreterV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterV2.sol";
 import {IExpressionDeployerV3} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IExpressionDeployerV3.sol";
-import {IOrderBookV3, OrderBook} from "rain.orderbook/src/concrete/ob/OrderBook.sol";
+import {
+    OrderBook
+} from "rain.orderbook/src/concrete/ob/OrderBook.sol"; 
+
 import {ISubParserV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/ISubParserV2.sol";
 import {OrderBookSubParser} from "rain.orderbook/src/concrete/parser/OrderBookSubParser.sol";
 import {UniswapWords} from "rain.uniswap/src/concrete/UniswapWords.sol";
 import {RouteProcessorOrderBookV3ArbOrderTaker} from "rain.orderbook/src/concrete/arb/RouteProcessorOrderBookV3ArbOrderTaker.sol";
 import {IOrderBookV3ArbOrderTaker} from "rain.orderbook/src/interface/unstable/IOrderBookV3ArbOrderTaker.sol";
 import {ICloneableFactoryV2} from "src/interface/ICloneableFactoryV2.sol";
-import {ROUTE_PROCESSOR} from "src/XBlockStrat.sol";
+import {
+    ROUTE_PROCESSOR,
+    XBLOCK_TOKEN,
+    USDT_TOKEN,
+    VAULT_ID,
+    IOrderBookV3,
+    IO,
+    OrderV2,
+    IO,
+    OrderConfigV2,
+    TakeOrderConfigV2,
+    TakeOrdersConfigV2,
+    APPROVED_EOA,
+    SafeERC20,
+    IERC20
+} from "src/XBlockStrat.sol";
 import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
-import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol"; 
+import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol";
+import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol"; 
 import "rain.uniswap/src/lib/v3/LibDeploy.sol";
+
 
 
 contract XBlockStratUtil is Test {
 
+    using SafeERC20 for IERC20;
+    using Strings for address;
     ICloneableFactoryV2 constant CLONE_FACTORY = ICloneableFactoryV2(0x27C062142b9DF4D07191bd2127Def504DC9e9937);
 
-    uint256 constant FORK_BLOCK_NUMBER = 19113518; 
+    uint256 constant FORK_BLOCK_NUMBER = 19119822; 
 
     function selectEthFork() internal {
         uint256 fork = vm.createFork(vm.envString("RPC_URL_ETH"));
@@ -87,13 +109,116 @@ contract XBlockStratUtil is Test {
                
             } 
         }  
+        console2.log("ARB_INSTANCE_ADDRESS : ",ARB_INSTANCE_ADDRESS);
         ARB_INSTANCE = IOrderBookV3ArbOrderTaker(ARB_INSTANCE_ADDRESS);
-
         }
+    }
 
+    function xBlockIo() internal pure returns (IO memory) {
+        return IO(address(XBLOCK_TOKEN), 18, VAULT_ID);
+    }
 
+    function usdtIo() internal pure returns (IO memory) {
+        return IO(address(USDT_TOKEN), 6, VAULT_ID);
+    }
+    
 
+    function getIERC20Balance(address token, address owner) internal view returns (uint256) {
+        return IERC20(token).balanceOf(owner);
+    }
 
+    function giveTestAccountsTokens(IERC20 token, address from, address to, uint256 amount) internal {
+        vm.startPrank(from);
+        token.safeTransfer(to, amount);
+        assertEq(token.balanceOf(to), amount);
+        vm.stopPrank();
+    }
+
+    function depositTokens(address depositor, IERC20 token, uint256 vaultId, uint256 amount) internal {
+        vm.startPrank(depositor);
+        token.safeApprove(address(ORDERBOOK), amount);
+        ORDERBOOK.deposit(address(token), vaultId, amount);
+        vm.stopPrank();
+    }
+
+    function placeOrder(address orderOwner, bytes memory bytecode, uint256[] memory constants, IO memory input, IO memory output)
+        internal
+        returns (OrderV2 memory order)
+    {
+        IO[] memory inputs = new IO[](1);
+        inputs[0] = input;
+
+        IO[] memory outputs = new IO[](1);
+        outputs[0] = output;
+
+        EvaluableConfigV3 memory evaluableConfig = EvaluableConfigV3(EXPRESSION_DEPLOYER, bytecode, constants);
+
+        OrderConfigV2 memory orderConfig = OrderConfigV2(inputs, outputs, evaluableConfig, "");
+
+        vm.startPrank(orderOwner);
+        vm.recordLogs();
+
+        (bool stateChanged) = ORDERBOOK.addOrder(orderConfig);
+
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+
+        assertEq(entries.length, 3);
+        (,, order,) = abi.decode(entries[2].data, (address, address, OrderV2, bytes32));
+        assertEq(order.owner, orderOwner);
+        assertEq(order.handleIO, true);
+        assertEq(address(order.evaluable.interpreter), address(INTERPRETER));
+        assertEq(address(order.evaluable.store), address(STORE));
+        assertEq(stateChanged, true);
+    }
+
+    function takeOrder(OrderV2 memory order, bytes memory route) internal {
+        vm.startPrank(APPROVED_EOA);
+
+        uint256 inputIOIndex = 0;
+        uint256 outputIOIndex = 0;
+
+        TakeOrderConfigV2[] memory innerConfigs = new TakeOrderConfigV2[](1);
+
+        innerConfigs[0] = TakeOrderConfigV2(order, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
+        uint256 outputTokenBalance =
+            ORDERBOOK.vaultBalance(order.owner, order.validOutputs[0].token, order.validOutputs[0].vaultId);
+        TakeOrdersConfigV2 memory takeOrdersConfig =
+            TakeOrdersConfigV2(0, outputTokenBalance, type(uint256).max, innerConfigs, route);
+        ARB_INSTANCE.arb(takeOrdersConfig, 0);
+        vm.stopPrank();
+    }
+
+    function getSubparserPrelude() internal returns(bytes memory) {
+        bytes memory RAINSTRING_OB_SUBPARSER = bytes(
+            string.concat(
+                "using-words-from ",
+                address(OB_SUPARSER).toHexString(),
+                " ",
+                address(UNISWAP_WORDS).toHexString()
+                
+            )
+        );
+        return RAINSTRING_OB_SUBPARSER ;
+    } 
+
+    function getEncodedBuyRoute() internal returns(bytes memory) {
+        bytes memory ROUTE_PRELUDE = hex"02dAC17F958D2ee523a2206206994597C13D831ec701ffff0189eebA49E12d06A26A25F83719914f173256CE7200";
+        return abi.encode(
+            bytes.concat(
+                ROUTE_PRELUDE,
+                abi.encodePacked(address(ARB_INSTANCE))
+            )
+        );
+    }
+
+    function getEncodedSellRoute() internal returns(bytes memory) {
+        bytes memory ROUTE_PRELUDE = hex"0225931894a86D47441213199621F1F2994e1c39Aa01ffff0189eebA49E12d06A26A25F83719914f173256CE7201";
+        return abi.encode(
+            bytes.concat(
+                ROUTE_PRELUDE,
+                abi.encodePacked(address(ARB_INSTANCE))
+            )
+        );
     }
 
 }
