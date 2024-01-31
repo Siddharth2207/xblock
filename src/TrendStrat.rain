@@ -21,7 +21,7 @@ jittered-amount-usdt18 _ _ ups downs: call<'prelude 5>(),
 ud-ratio: decimal18-div(decimal18-scale18<0>(int-add(1 ups)) decimal18-scale18<0>(int-add(1 downs))),
 amount-usdt18: decimal18-mul(jittered-amount-usdt18 ud-ratio),
 amount-usdt6: decimal18-scale-n<6>(amount-usdt18),
-xblock-amount18: uniswap-v3-exact-output(xblock-token-address usdt-token-address amount-usdt6 [uniswap-v3-fee-medium]),
+xblock-amount18: uniswap-v3-exact-input(usdt-token-address xblock-token-address amount-usdt6 [uniswap-v3-fee-medium]),
 order-output-max18: decimal18-add(amount-usdt18 bounty),
 io-ratio: decimal18-div(xblock-amount18 order-output-max18);
 
@@ -33,7 +33,7 @@ jittered-amount-usdt18 _ _ ups downs: call<'prelude 5>(),
 du-ratio: decimal18-div(decimal18-scale18<0>(int-add(1 downs)) decimal18-scale18<0>(int-add(1 ups))),
 amount-usdt18: decimal18-mul(jittered-amount-usdt18 decimal18-power(du-ratio 7e17)),
 amount-usdt6: decimal18-scale-n<6>(amount-usdt18),
-xblock-amount18: uniswap-v3-exact-input(usdt-token-address xblock-token-address amount-usdt6 [uniswap-v3-fee-medium]),
+xblock-amount18: uniswap-v3-exact-output(xblock-token-address usdt-token-address amount-usdt6 [uniswap-v3-fee-medium]),
 order-output-max18: xblock-amount18,
 io-ratio: decimal18-div(decimal18-sub(amount-usdt18 bounty) order-output-max18);
 
