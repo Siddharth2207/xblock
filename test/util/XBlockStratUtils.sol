@@ -1,22 +1,26 @@
 // SPDX-License-Identifier: CAL
 pragma solidity =0.8.19;
+
 import {console2, Test} from "forge-std/Test.sol";
 import {RainterpreterParserNPE2} from "rain.orderbook/lib/rain.interpreter/src/concrete/RainterpreterParserNPE2.sol";
 import {RainterpreterStoreNPE2} from "rain.orderbook/lib/rain.interpreter/src/concrete/RainterpreterStoreNPE2.sol";
 import {RainterpreterNPE2} from "rain.orderbook/lib/rain.interpreter/src/concrete/RainterpreterNPE2.sol";
-import {RainterpreterExpressionDeployerNPE2,RainterpreterExpressionDeployerNPE2ConstructionConfig} from "rain.orderbook/lib/rain.interpreter/src/concrete/RainterpreterExpressionDeployerNPE2.sol"; 
+import {
+    RainterpreterExpressionDeployerNPE2,
+    RainterpreterExpressionDeployerNPE2ConstructionConfig
+} from "rain.orderbook/lib/rain.interpreter/src/concrete/RainterpreterExpressionDeployerNPE2.sol";
 import {IParserV1} from "rain.orderbook/lib/rain.interpreter/src/interface/IParserV1.sol";
 import {IInterpreterStoreV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterStoreV2.sol";
 import {IInterpreterV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterV2.sol";
-import {IExpressionDeployerV3} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IExpressionDeployerV3.sol";
-import {
-    OrderBook
-} from "rain.orderbook/src/concrete/ob/OrderBook.sol"; 
+import {IExpressionDeployerV3} from
+    "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IExpressionDeployerV3.sol";
+import {OrderBook} from "rain.orderbook/src/concrete/ob/OrderBook.sol";
 
 import {ISubParserV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/ISubParserV2.sol";
 import {OrderBookSubParser} from "rain.orderbook/src/concrete/parser/OrderBookSubParser.sol";
 import {UniswapWords} from "rain.uniswap/src/concrete/UniswapWords.sol";
-import {RouteProcessorOrderBookV3ArbOrderTaker} from "rain.orderbook/src/concrete/arb/RouteProcessorOrderBookV3ArbOrderTaker.sol";
+import {RouteProcessorOrderBookV3ArbOrderTaker} from
+    "rain.orderbook/src/concrete/arb/RouteProcessorOrderBookV3ArbOrderTaker.sol";
 import {IOrderBookV3ArbOrderTaker} from "rain.orderbook/src/interface/unstable/IOrderBookV3ArbOrderTaker.sol";
 import {ICloneableFactoryV2} from "src/interface/ICloneableFactoryV2.sol";
 import {
@@ -37,24 +41,22 @@ import {
 } from "src/XBlockStrat.sol";
 import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
 import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol";
-import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol"; 
+import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "rain.uniswap/src/lib/v3/LibDeploy.sol";
 
-
-
 contract XBlockStratUtil is Test {
-
     using SafeERC20 for IERC20;
     using Strings for address;
+
     ICloneableFactoryV2 constant CLONE_FACTORY = ICloneableFactoryV2(0x27C062142b9DF4D07191bd2127Def504DC9e9937);
 
-    uint256 constant FORK_BLOCK_NUMBER = 19119822; 
+    uint256 constant FORK_BLOCK_NUMBER = 19119822;
 
     function selectEthFork() internal {
         uint256 fork = vm.createFork(vm.envString("RPC_URL_ETH"));
         vm.selectFork(fork);
         vm.rollFork(FORK_BLOCK_NUMBER);
-    } 
+    }
 
     IParserV1 public PARSER;
     IInterpreterV2 public INTERPRETER;
@@ -66,16 +68,15 @@ contract XBlockStratUtil is Test {
     IOrderBookV3ArbOrderTaker public ARB_IMPLEMENTATION;
     IOrderBookV3ArbOrderTaker public ARB_INSTANCE;
 
-
-
     function setUp() public {
         selectEthFork();
-        PARSER = new RainterpreterParserNPE2(); 
+        PARSER = new RainterpreterParserNPE2();
         STORE = new RainterpreterStoreNPE2();
         INTERPRETER = new RainterpreterNPE2();
-        
 
-        bytes memory constructionMeta = vm.readFileBinary("lib/rain.orderbook/lib/rain.interpreter/meta/RainterpreterExpressionDeployerNPE2.rain.meta");
+        bytes memory constructionMeta = vm.readFileBinary(
+            "lib/rain.orderbook/lib/rain.interpreter/meta/RainterpreterExpressionDeployerNPE2.rain.meta"
+        );
 
         EXPRESSION_DEPLOYER = new RainterpreterExpressionDeployerNPE2(
             RainterpreterExpressionDeployerNPE2ConstructionConfig(
@@ -88,29 +89,25 @@ contract XBlockStratUtil is Test {
         UNISWAP_WORDS = LibDeploy.newUniswapWords(vm);
         ARB_IMPLEMENTATION = new RouteProcessorOrderBookV3ArbOrderTaker();
         address ARB_INSTANCE_ADDRESS;
-        {    
+        {
             bytes memory ungatedArbExpression = "";
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(ungatedArbExpression);
             bytes memory implementationData = abi.encode(address(ROUTE_PROCESSOR));
-            EvaluableConfigV3 memory evaluableConfig = EvaluableConfigV3(EXPRESSION_DEPLOYER,bytecode,constants);
-            OrderBookV3ArbOrderTakerConfigV1 memory cloneConfig = OrderBookV3ArbOrderTakerConfigV1(
-                address(ORDERBOOK),
-                evaluableConfig,
-                implementationData
-            );
+            EvaluableConfigV3 memory evaluableConfig = EvaluableConfigV3(EXPRESSION_DEPLOYER, bytecode, constants);
+            OrderBookV3ArbOrderTakerConfigV1 memory cloneConfig =
+                OrderBookV3ArbOrderTakerConfigV1(address(ORDERBOOK), evaluableConfig, implementationData);
             bytes memory encodedConfig = abi.encode(cloneConfig);
 
             vm.recordLogs();
-            CLONE_FACTORY.clone(address(ARB_IMPLEMENTATION),encodedConfig);
+            CLONE_FACTORY.clone(address(ARB_IMPLEMENTATION), encodedConfig);
             Vm.Log[] memory entries = vm.getRecordedLogs();
             for (uint256 j = 0; j < entries.length; j++) {
-            if (entries[j].topics[0] == keccak256("NewClone(address,address,address)")) {
-                (,,ARB_INSTANCE_ADDRESS) = abi.decode(entries[j].data, (address, address, address));
-               
-            } 
-        }  
-        console2.log("ARB_INSTANCE_ADDRESS : ",ARB_INSTANCE_ADDRESS);
-        ARB_INSTANCE = IOrderBookV3ArbOrderTaker(ARB_INSTANCE_ADDRESS);
+                if (entries[j].topics[0] == keccak256("NewClone(address,address,address)")) {
+                    (,, ARB_INSTANCE_ADDRESS) = abi.decode(entries[j].data, (address, address, address));
+                }
+            }
+            console2.log("ARB_INSTANCE_ADDRESS : ", ARB_INSTANCE_ADDRESS);
+            ARB_INSTANCE = IOrderBookV3ArbOrderTaker(ARB_INSTANCE_ADDRESS);
         }
     }
 
@@ -121,7 +118,6 @@ contract XBlockStratUtil is Test {
     function usdtIo() internal pure returns (IO memory) {
         return IO(address(USDT_TOKEN), 6, VAULT_ID);
     }
-    
 
     function getIERC20Balance(address token, address owner) internal view returns (uint256) {
         return IERC20(token).balanceOf(owner);
@@ -141,10 +137,13 @@ contract XBlockStratUtil is Test {
         vm.stopPrank();
     }
 
-    function placeOrder(address orderOwner, bytes memory bytecode, uint256[] memory constants, IO memory input, IO memory output)
-        internal
-        returns (OrderV2 memory order)
-    {
+    function placeOrder(
+        address orderOwner,
+        bytes memory bytecode,
+        uint256[] memory constants,
+        IO memory input,
+        IO memory output
+    ) internal returns (OrderV2 memory order) {
         IO[] memory inputs = new IO[](1);
         inputs[0] = input;
 
@@ -208,9 +207,9 @@ contract XBlockStratUtil is Test {
 
         ROUTE_PROCESSOR.processRoute(inputToken, amountIn, outputToken, 0, EXTERNAL_EOA, decodedRoute);
         vm.stopPrank();
-    } 
+    }
 
-    function getSellOrder() internal returns(bytes memory sellOrder) {
+    function getSellOrder() internal returns (bytes memory sellOrder) {
         string[] memory inputs = new string[](9);
         inputs[0] = "rain";
         inputs[1] = "dotrain";
@@ -222,10 +221,10 @@ contract XBlockStratUtil is Test {
         inputs[7] = "--entrypoints";
         inputs[8] = "sell-order-handle-io";
 
-        sellOrder = bytes.concat(getSubparserPrelude(),vm.ffi(inputs)); 
+        sellOrder = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
     }
 
-    function getBuyOrder() internal returns(bytes memory buyOrder) {
+    function getBuyOrder() internal returns (bytes memory buyOrder) {
         string[] memory inputs = new string[](9);
         inputs[0] = "rain";
         inputs[1] = "dotrain";
@@ -237,40 +236,27 @@ contract XBlockStratUtil is Test {
         inputs[7] = "--entrypoints";
         inputs[8] = "buy-order-handle-io";
 
-        buyOrder = bytes.concat(getSubparserPrelude(),vm.ffi(inputs)); 
+        buyOrder = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
     }
 
-    function getSubparserPrelude() internal view returns(bytes memory) {
+    function getSubparserPrelude() internal view returns (bytes memory) {
         bytes memory RAINSTRING_OB_SUBPARSER = bytes(
             string.concat(
-                "using-words-from ",
-                address(OB_SUPARSER).toHexString(),
-                " ",
-                address(UNISWAP_WORDS).toHexString()
-                
+                "using-words-from ", address(OB_SUPARSER).toHexString(), " ", address(UNISWAP_WORDS).toHexString()
             )
         );
-        return RAINSTRING_OB_SUBPARSER ;
-    } 
-
-    function getEncodedBuyRoute() internal view returns(bytes memory) {
-        bytes memory ROUTE_PRELUDE = hex"02dAC17F958D2ee523a2206206994597C13D831ec701ffff0189eebA49E12d06A26A25F83719914f173256CE7200";
-        return abi.encode(
-            bytes.concat(
-                ROUTE_PRELUDE,
-                abi.encodePacked(address(ARB_INSTANCE))
-            )
-        );
+        return RAINSTRING_OB_SUBPARSER;
     }
 
-    function getEncodedSellRoute() internal view returns(bytes memory) {
-        bytes memory ROUTE_PRELUDE = hex"0225931894a86D47441213199621F1F2994e1c39Aa01ffff0189eebA49E12d06A26A25F83719914f173256CE7201";
-        return abi.encode(
-            bytes.concat(
-                ROUTE_PRELUDE,
-                abi.encodePacked(address(ARB_INSTANCE))
-            )
-        );
+    function getEncodedBuyRoute() internal view returns (bytes memory) {
+        bytes memory ROUTE_PRELUDE =
+            hex"02dAC17F958D2ee523a2206206994597C13D831ec701ffff0189eebA49E12d06A26A25F83719914f173256CE7200";
+        return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
     }
 
+    function getEncodedSellRoute() internal view returns (bytes memory) {
+        bytes memory ROUTE_PRELUDE =
+            hex"0225931894a86D47441213199621F1F2994e1c39Aa01ffff0189eebA49E12d06A26A25F83719914f173256CE7201";
+        return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
+    }
 }
