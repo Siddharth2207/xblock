@@ -208,50 +208,34 @@ contract XBlockStratUtil is Test {
 
         ROUTE_PROCESSOR.processRoute(inputToken, amountIn, outputToken, 0, EXTERNAL_EOA, decodedRoute);
         vm.stopPrank();
-    }
+    } 
 
     function getSellOrder() internal returns(bytes memory sellOrder) {
-        string[] memory inputs = new string[](17);
+        string[] memory inputs = new string[](9);
         inputs[0] = "rain";
         inputs[1] = "dotrain";
         inputs[2] = "compose";
         inputs[3] = "-i";
-        inputs[4] = "./src/TrendStratSell.rain";
+        inputs[4] = "./src/TrendStrat.rain";
         inputs[5] = "--entrypoints";
-        inputs[6] = "calculate-io";
+        inputs[6] = "sell-order-calculate-io";
         inputs[7] = "--entrypoints";
-        inputs[8] = "handle-io";
-        inputs[9] = "--entrypoints";
-        inputs[10] = "jittery-binomial";
-        inputs[11] = "--entrypoints";
-        inputs[12] = "ensure-cooldown";
-        inputs[13] = "--entrypoints";
-        inputs[14] = "target-usdt";
-        inputs[15] = "--entrypoints";
-        inputs[16] = "ud-ratio-source";
+        inputs[8] = "sell-order-handle-io";
 
         sellOrder = bytes.concat(getSubparserPrelude(),vm.ffi(inputs)); 
     }
 
     function getBuyOrder() internal returns(bytes memory buyOrder) {
-        string[] memory inputs = new string[](17);
+        string[] memory inputs = new string[](9);
         inputs[0] = "rain";
         inputs[1] = "dotrain";
         inputs[2] = "compose";
         inputs[3] = "-i";
-        inputs[4] = "./src/TrendStratBuy.rain";
+        inputs[4] = "./src/TrendStrat.rain";
         inputs[5] = "--entrypoints";
-        inputs[6] = "calculate-io";
+        inputs[6] = "buy-order-calculate-io";
         inputs[7] = "--entrypoints";
-        inputs[8] = "handle-io";
-        inputs[9] = "--entrypoints";
-        inputs[10] = "jittery-binomial";
-        inputs[11] = "--entrypoints";
-        inputs[12] = "ensure-cooldown";
-        inputs[13] = "--entrypoints";
-        inputs[14] = "target-usdt";
-        inputs[15] = "--entrypoints";
-        inputs[16] = "ud-ratio-source";
+        inputs[8] = "buy-order-handle-io";
 
         buyOrder = bytes.concat(getSubparserPrelude(),vm.ffi(inputs)); 
     }

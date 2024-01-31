@@ -18,16 +18,6 @@ contract XBlockStratTest is XBlockStratUtil {
 
     address constant TEST_ORDER_OWNER = address(0x84723849238);
 
-    function testStrategyExpression() public {
-        console2.log(block.timestamp);  
-        (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
-            bytes.concat(
-                getSubparserPrelude(),
-                rainstringSell()
-            )
-        );
-    } 
-
     function testSellOrderHappyFork() public {
         {
             uint256 depositAmount = 1000000e18;
