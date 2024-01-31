@@ -240,7 +240,7 @@ contract XBlockStratUtil is Test {
         buyOrder = bytes.concat(getSubparserPrelude(),vm.ffi(inputs)); 
     }
 
-    function getSubparserPrelude() internal returns(bytes memory) {
+    function getSubparserPrelude() internal view returns(bytes memory) {
         bytes memory RAINSTRING_OB_SUBPARSER = bytes(
             string.concat(
                 "using-words-from ",
@@ -253,7 +253,7 @@ contract XBlockStratUtil is Test {
         return RAINSTRING_OB_SUBPARSER ;
     } 
 
-    function getEncodedBuyRoute() internal returns(bytes memory) {
+    function getEncodedBuyRoute() internal view returns(bytes memory) {
         bytes memory ROUTE_PRELUDE = hex"02dAC17F958D2ee523a2206206994597C13D831ec701ffff0189eebA49E12d06A26A25F83719914f173256CE7200";
         return abi.encode(
             bytes.concat(
@@ -263,7 +263,7 @@ contract XBlockStratUtil is Test {
         );
     }
 
-    function getEncodedSellRoute() internal returns(bytes memory) {
+    function getEncodedSellRoute() internal view returns(bytes memory) {
         bytes memory ROUTE_PRELUDE = hex"0225931894a86D47441213199621F1F2994e1c39Aa01ffff0189eebA49E12d06A26A25F83719914f173256CE7201";
         return abi.encode(
             bytes.concat(
