@@ -17,7 +17,6 @@ contract XBlockStratTest is XBlockStratUtil {
             giveTestAccountsTokens(XBLOCK_TOKEN, XBLOCK_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
             depositTokens(TEST_ORDER_OWNER, XBLOCK_TOKEN, VAULT_ID, depositAmount);
         }
-        moveUniswapV3Price(address(USDT_TOKEN), address(XBLOCK_TOKEN), USDT_TOKEN_HOLDER, 10000e6, getEncodedBuyRoute());
         OrderV2 memory sellOrder;
         {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getSellOrder());
@@ -53,9 +52,5 @@ contract XBlockStratTest is XBlockStratUtil {
         }
         console2.log("input : ", input);
         console2.log("output : ", output);
-    }
-
-    function testOrderParse() public {
-        PARSER.parse(getBuyOrder());
     }
 }
