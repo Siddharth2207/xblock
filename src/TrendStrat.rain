@@ -78,4 +78,4 @@ downs: int-sub(10 ups),
 twap-0: uniswap-v3-twap(xblock-token-address xblock-token-decimals usdt-token-address usdt-token-decimals 0 0 [uniswap-v3-fee-medium]),
 twap-1: uniswap-v3-twap(xblock-token-address xblock-token-decimals usdt-token-address usdt-token-decimals 1 0 [uniswap-v3-fee-medium]),
 twap-ratio: decimal18-div(twap-1 twap-0),
-:ensure<555>(any(less-than(twap-ratio 101e16) greater-than(twap-ratio 99e16)));
+:ensure<555>(any(less-than(twap-ratio 1001e15) greater-than(twap-ratio 999e15)));
