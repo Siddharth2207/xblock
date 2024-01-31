@@ -188,6 +188,74 @@ contract XBlockStratUtil is Test {
         vm.stopPrank();
     }
 
+    function moveUniswapV3Price(
+        address inputToken,
+        address outputToken,
+        address tokenHolder,
+        uint256 amountIn,
+        bytes memory encodedRoute
+    ) public {
+        // An External Account
+        address EXTERNAL_EOA = address(0x654FEf5Fb8A1C91ad47Ba192F7AA81dd3C821427);
+        {
+            giveTestAccountsTokens(IERC20(inputToken), tokenHolder, EXTERNAL_EOA, amountIn);
+        }
+        vm.startPrank(EXTERNAL_EOA);
+
+        IERC20(inputToken).safeApprove(address(ROUTE_PROCESSOR), amountIn);
+
+        bytes memory decodedRoute = abi.decode(encodedRoute, (bytes));
+
+        ROUTE_PROCESSOR.processRoute(inputToken, amountIn, outputToken, 0, EXTERNAL_EOA, decodedRoute);
+        vm.stopPrank();
+    }
+
+    function getSellOrder() internal returns(bytes memory sellOrder) {
+        string[] memory inputs = new string[](17);
+        inputs[0] = "rain";
+        inputs[1] = "dotrain";
+        inputs[2] = "compose";
+        inputs[3] = "-i";
+        inputs[4] = "./src/TrendStratSell.rain";
+        inputs[5] = "--entrypoints";
+        inputs[6] = "calculate-io";
+        inputs[7] = "--entrypoints";
+        inputs[8] = "handle-io";
+        inputs[9] = "--entrypoints";
+        inputs[10] = "jittery-binomial";
+        inputs[11] = "--entrypoints";
+        inputs[12] = "ensure-cooldown";
+        inputs[13] = "--entrypoints";
+        inputs[14] = "target-usdt";
+        inputs[15] = "--entrypoints";
+        inputs[16] = "ud-ratio-source";
+
+        sellOrder = bytes.concat(getSubparserPrelude(),vm.ffi(inputs)); 
+    }
+
+    function getBuyOrder() internal returns(bytes memory buyOrder) {
+        string[] memory inputs = new string[](17);
+        inputs[0] = "rain";
+        inputs[1] = "dotrain";
+        inputs[2] = "compose";
+        inputs[3] = "-i";
+        inputs[4] = "./src/TrendStratBuy.rain";
+        inputs[5] = "--entrypoints";
+        inputs[6] = "calculate-io";
+        inputs[7] = "--entrypoints";
+        inputs[8] = "handle-io";
+        inputs[9] = "--entrypoints";
+        inputs[10] = "jittery-binomial";
+        inputs[11] = "--entrypoints";
+        inputs[12] = "ensure-cooldown";
+        inputs[13] = "--entrypoints";
+        inputs[14] = "target-usdt";
+        inputs[15] = "--entrypoints";
+        inputs[16] = "ud-ratio-source";
+
+        buyOrder = bytes.concat(getSubparserPrelude(),vm.ffi(inputs)); 
+    }
+
     function getSubparserPrelude() internal returns(bytes memory) {
         bytes memory RAINSTRING_OB_SUBPARSER = bytes(
             string.concat(

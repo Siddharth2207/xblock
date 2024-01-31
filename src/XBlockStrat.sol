@@ -73,7 +73,7 @@ bytes constant RAINSTRING_PRELUDE =
     // Ensure jittered cooldown.
     ":call<3 0>(last-time 1440e18),"
     // Get jittered usdt amounts.
-    "jittered-amount-usdt18 jittered-amount-usdt6: call<4 2>(last-time 160e18),"
+    "jittered-amount-usdt18 jittered-amount-usdt6: call<4 2>(last-time 166666666666666666666),"
     // Get XBLOCK amount for constant USDT amount
     "constant-xblock-quote: uniswap-v3-twap(usdt-token-address 6 xblock-token-address 18 0 0 3000),"
     // ud-ratio, du-ratio for the constant xblock amount.

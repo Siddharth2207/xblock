@@ -5,6 +5,9 @@ libs = ['lib']
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
 
+# Needed for dotrain compose
+ffi = true
+
 solc = "0.8.19"
 optimizer = true
 optimizer_runs = 100000
@@ -24,6 +27,7 @@ remappings = [
   "rain.interpreter/=lib/rain.orderbook/lib/rain.interpreter/src",
   "rain.metadata/=lib/rain.orderbook/lib/rain.metadata/src"
 ]
+
 
 [fuzz]
 runs = 1024

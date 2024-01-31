@@ -1,0 +1,50 @@
+#calculate-io
+xblock-token-address: 0x25931894a86D47441213199621F1F2994e1c39Aa,
+usdt-token-address: 0xdAC17F958D2ee523a2206206994597C13D831ec7,
+last-time: get(order-hash()),
+:set(order-hash() block-timestamp()),
+:call<3 0>(last-time 1440e18),
+jittered-amount-usdt18 jittered-amount-usdt6: call<4 2>(last-time 166666666666666666666),
+constant-xblock-quote: uniswap-v3-twap(usdt-token-address 6 xblock-token-address 18 0 0 3000),
+ups downs: call<5 2>(0x844298f03374ebab272d6aea77dd06a67ca29d81adbe996adfd748ae279abd97 constant-xblock-quote),
+du-ratio: decimal18-div(decimal18-scale18<0>(int-add(1 downs)) decimal18-scale18<0>(int-add(1 ups))),
+amount-usdt18: decimal18-mul(jittered-amount-usdt18 decimal18-power(du-ratio 7e17)),
+amount-usdt6: decimal18-scale-n<6>(amount-usdt18),
+xblock-amount18: uniswap-v3-exact-input(usdt-token-address xblock-token-address amount-usdt6 3000),
+order-output-max18: xblock-amount18,
+io-ratio: decimal18-div(decimal18-sub(amount-usdt18 8e16) order-output-max18);
+
+#handle-io
+:ensure<5>(greater-than-or-equal-to(output-vault-balance-decrease() calculated-max-output()));
+
+#jittery-binomial
+input:,
+binomial18-10: decimal18-scale18<0>(bitwise-count-ones(bitwise-decode<0 10>(hash(input)))),
+noise18-1: int-mod(hash(input 0) 1e18),
+jittery-11: decimal18-add(binomial18-10 noise18-1),
+jittery-1: decimal18-div(jittery-11 11e18);
+
+#ensure-cooldown
+last-time target-cooldown18:,
+cooldown-random-multiplier18: call<2 1>(hash(last-time)),
+cooldown18: decimal18-mul(decimal18-mul(target-cooldown18 2e18) cooldown-random-multiplier18),
+cooldown: decimal18-scale-n<0>(cooldown18),
+:ensure<1>(less-than(int-add(last-time cooldown) block-timestamp()));
+
+#target-usdt
+last-time target-usdt18:,
+amount-random-multiplier18: call<2 1>(last-time),
+amount-usdt18: decimal18-mul(decimal18-mul(target-usdt18 2e18) amount-random-multiplier18),
+amount-usdt6: decimal18-scale-n<6>(amount-usdt18);
+
+#ud-ratio-source
+seed current-value:,
+initial-tracker: 0x5555555555555555555555555555555555555555555555555555555555555555,
+last-value-key: hash(seed),
+tracker-key: hash(last-value-key),
+last-value: get(last-value-key),
+tracker: bitwise-or(bitwise-shift-left<1>(any(get(tracker-key) initial-tracker)) greater-than(current-value last-value)),
+ups: bitwise-count-ones(bitwise-decode<0 10>(tracker)),
+downs: int-sub(10 ups),
+:set(last-value-key current-value),
+:set(tracker-key tracker);
