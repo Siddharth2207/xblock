@@ -5,8 +5,6 @@ import {Vm} from "forge-std/Vm.sol";
 import {console2, Test} from "forge-std/Test.sol";
 import {XBlockStratUtil} from "test/util/XBlockStratUtils.sol";
 import {
-    rainstringSell,
-    rainstringBuy,
     XBLOCK_TOKEN,
     USDT_TOKEN,
     XBLOCK_TOKEN_HOLDER,
