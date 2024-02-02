@@ -249,6 +249,19 @@ contract XBlockStratUtil is Test {
         buyOrder = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
     }
 
+    function getUdSource() internal returns (bytes memory udSource) {
+        string[] memory inputs = new string[](7);
+        inputs[0] = "rain";
+        inputs[1] = "dotrain";
+        inputs[2] = "compose";
+        inputs[3] = "-i";
+        inputs[4] = "./src/TrendStrat.rain";
+        inputs[5] = "--entrypoints";
+        inputs[6] = "ud";
+
+        udSource = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
+    }
+
     function getSubparserPrelude() internal view returns (bytes memory) {
         bytes memory RAINSTRING_OB_SUBPARSER = bytes(
             string.concat(
@@ -338,5 +351,13 @@ contract XBlockStratUtil is Test {
         bytes memory ROUTE_PRELUDE =
             hex"0225931894a86D47441213199621F1F2994e1c39Aa01ffff0189eebA49E12d06A26A25F83719914f173256CE7201";
         return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
+    }
+
+    function decodeBits(uint256 operand, uint256 input) internal pure returns (uint256 output) {
+        uint256 startBit = operand & 0xFF;
+        uint256 length = (operand >> 8) & 0xFF;
+
+        uint256 mask = (2 ** length) - 1;
+        output = (input >> startBit) & mask;
     }
 }

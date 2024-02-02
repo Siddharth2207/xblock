@@ -20,10 +20,13 @@ import {
     USDT_TOKEN_HOLDER,
     VAULT_ID,
     OrderV2,
-    TARGET_COOLDOWN_18
+    TARGET_COOLDOWN_18,
+    TRACKER,
+    SEED
 } from "src/XBlockStrat.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
+import "rain.orderbook/lib/rain.interpreter/src/lib/bitwise/LibCtPop.sol";
 
 contract XBlockStratTest is XBlockStratUtil {
     using LibFixedPointDecimalArithmeticOpenZeppelin for uint256;
@@ -108,7 +111,7 @@ contract XBlockStratTest is XBlockStratUtil {
             // Set initial value for the down-up ratio to be the min.
             uint256 duRatio = uint256(1e18).fixedPointDiv(11e18, Math.Rounding.Down);
             for (uint256 i = 0; i < 10; i++) {
-                // Increase the price of TRADE
+                // Increase the price of XBLOCK
                 moveUniswapV3Price(
                     address(USDT_TOKEN),
                     address(XBLOCK_TOKEN),
@@ -142,7 +145,7 @@ contract XBlockStratTest is XBlockStratUtil {
             // Set initial value for the down-up ratio to be the max.
             uint256 duRatio = uint256(11e18).fixedPointDiv(1e18, Math.Rounding.Down);
             for (uint256 i = 0; i < 10; i++) {
-                // Decrease the price of TRADE
+                // Decrease the price of XBLOCK
                 moveUniswapV3Price(
                     address(XBLOCK_TOKEN),
                     address(USDT_TOKEN),
@@ -189,7 +192,7 @@ contract XBlockStratTest is XBlockStratUtil {
             // Set initial value for the up-down ratio to be the max.
             uint256 udRatio = uint256(11e18).fixedPointDiv(1e18, Math.Rounding.Down);
             for (uint256 i = 0; i < 10; i++) {
-                // Increase the price of TRADE
+                // Increase the price of XBLOCK
                 moveUniswapV3Price(
                     address(USDT_TOKEN),
                     address(XBLOCK_TOKEN),
@@ -224,7 +227,7 @@ contract XBlockStratTest is XBlockStratUtil {
             // Set initial value for the up-down ratio to be the min.
             uint256 udRatio = uint256(1e18).fixedPointDiv(11e18, Math.Rounding.Down);
             for (uint256 i = 0; i < 10; i++) {
-                // Decrease the price of TRADE
+                // Decrease the price of XBLOCK
                 moveUniswapV3Price(
                     address(XBLOCK_TOKEN),
                     address(USDT_TOKEN),
@@ -315,6 +318,55 @@ contract XBlockStratTest is XBlockStratUtil {
         vm.warp(block.timestamp + 1);
         takeOrder(buyOrder, getEncodedBuyRoute());
 
+    }
+
+    function testUdRatio(uint256[] memory valueInputs) public {
+        // Intial Tracker
+        uint256 tracker = TRACKER;
+        // Intial value
+        uint256 lastValue = 0;
+
+        // Parser and Deploy expression
+        (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getUdSource());
+        (IInterpreterV2 interpreter, IInterpreterStoreV1 store, address expression,) = EXPRESSION_DEPLOYER.deployExpression2(bytecode, constants);
+
+        uint256[][] memory context = new uint256[][](0);
+        uint256[] memory inputs = new uint256[](2);
+
+        for (uint256 i = 0; i < valueInputs.length; i++) {
+            uint256 currentValue = valueInputs[i];
+            inputs[0] = currentValue;
+            inputs[1] = SEED;
+
+            // Eval UD expression
+            (uint256[] memory stack, uint256[] memory kvs) = INTERPRETER.eval2(
+                    store,
+                    getNamespace(),
+                    LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+                    context,
+                    inputs
+            );
+
+            {
+                // Update local tracker and calculate up-down ratio
+                tracker = (tracker << 1) | (currentValue > lastValue ? 1 : 0);
+                uint256 tracker10 = decodeBits(0x010A00, tracker);
+                uint256 upCount = LibCtPop.ctpop(tracker10);
+                uint256 downCount = 10 - upCount;
+                uint256 ups = upCount == 0 ? 1 : upCount;
+                uint256 downs = downCount == 0 ? 1 : downCount;
+
+                // Check ups,dpwns.
+                assertEq(stack[1], ups);
+                assertEq(stack[0], downs);
+
+                // Update Store
+                store.set(StateNamespace.wrap(0), kvs);
+            }
+
+            // Update last value
+            lastValue = currentValue;
+        }
     } 
 
 
