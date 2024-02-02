@@ -36,21 +36,6 @@ contract XBlockStratTest is XBlockStratUtil {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getBuyOrder());
             buyOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, xBlockIo(), usdtIo());
         }
-        vm.recordLogs();
         takeOrder(buyOrder, getEncodedBuyRoute());
-
-        // Get Input, Output and BotBounty
-        Vm.Log[] memory takeOrderEntries = vm.getRecordedLogs();
-        uint256 output;
-        uint256 input;
-        for (uint256 j = 0; j < takeOrderEntries.length; j++) {
-            if (takeOrderEntries[j].topics[0] == keccak256("Context(address,uint256[][])")) {
-                (, uint256[][] memory context) = abi.decode(takeOrderEntries[j].data, (address, uint256[][]));
-                input = context[3][4];
-                output = context[4][4];
-            }
-        }
-        console2.log("input : ", input);
-        console2.log("output : ", output);
     }
 }
