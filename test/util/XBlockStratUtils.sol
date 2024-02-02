@@ -10,8 +10,9 @@ import {
     RainterpreterExpressionDeployerNPE2ConstructionConfig
 } from "rain.orderbook/lib/rain.interpreter/src/concrete/RainterpreterExpressionDeployerNPE2.sol";
 import {IParserV1} from "rain.orderbook/lib/rain.interpreter/src/interface/IParserV1.sol";
+import {IInterpreterStoreV1} from "rain.orderbook/lib/rain.interpreter/src/interface/IInterpreterStoreV1.sol";
 import {IInterpreterStoreV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterStoreV2.sol";
-import {IInterpreterV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterV2.sol";
+import {IInterpreterV2,SourceIndexV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterV2.sol";
 import {IExpressionDeployerV3} from
     "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IExpressionDeployerV3.sol";
 import {OrderBook} from "rain.orderbook/src/concrete/ob/OrderBook.sol";
@@ -41,16 +42,23 @@ import {
 } from "src/XBlockStrat.sol";
 import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
 import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol";
+import {StateNamespace, LibNamespace, FullyQualifiedNamespace} from "rain.orderbook/lib/rain.interpreter/src/lib/ns/LibNamespace.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
+import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
+import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
 import "rain.uniswap/src/lib/v3/LibDeploy.sol";
 
 contract XBlockStratUtil is Test {
     using SafeERC20 for IERC20;
     using Strings for address;
 
+    using LibFixedPointDecimalArithmeticOpenZeppelin for uint256;
+    using LibFixedPointDecimalScale for uint256;
+
     ICloneableFactoryV2 constant CLONE_FACTORY = ICloneableFactoryV2(0x27C062142b9DF4D07191bd2127Def504DC9e9937);
 
     uint256 constant FORK_BLOCK_NUMBER = 19119822;
+    uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
     function selectEthFork() internal {
         uint256 fork = vm.createFork(vm.envString("RPC_URL_ETH"));
@@ -123,6 +131,10 @@ contract XBlockStratUtil is Test {
         return IERC20(token).balanceOf(owner);
     }
 
+    function getNamespace() public view returns (FullyQualifiedNamespace) {
+        return LibNamespace.qualifyNamespace(StateNamespace.wrap(0), address(this));
+    }
+
     function giveTestAccountsTokens(IERC20 token, address from, address to, uint256 amount) internal {
         vm.startPrank(from);
         token.safeTransfer(to, amount);
@@ -179,10 +191,8 @@ contract XBlockStratUtil is Test {
         TakeOrderConfigV2[] memory innerConfigs = new TakeOrderConfigV2[](1);
 
         innerConfigs[0] = TakeOrderConfigV2(order, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
-        uint256 outputTokenBalance =
-            ORDERBOOK.vaultBalance(order.owner, order.validOutputs[0].token, order.validOutputs[0].vaultId);
         TakeOrdersConfigV2 memory takeOrdersConfig =
-            TakeOrdersConfigV2(0, outputTokenBalance, type(uint256).max, innerConfigs, route);
+            TakeOrdersConfigV2(0, type(uint256).max, type(uint256).max, innerConfigs, route);
         ARB_INSTANCE.arb(takeOrdersConfig, 0);
         vm.stopPrank();
     }
@@ -246,6 +256,76 @@ contract XBlockStratUtil is Test {
             )
         );
         return RAINSTRING_OB_SUBPARSER;
+    }
+
+    function getSellOrderContext(uint256 orderHash) internal view returns (uint256[][] memory context) {
+        // Sell Order Context
+        context = new uint256[][](5);
+        {
+            {
+                uint256[] memory baseContext = new uint256[](2);
+                context[0] = baseContext;
+            }
+            {
+                uint256[] memory callingContext = new uint256[](3);
+                // order hash
+                callingContext[0] = orderHash;
+                // owner
+                callingContext[1] = uint256(uint160(address(ORDERBOOK)));
+                // counterparty
+                callingContext[2] = uint256(uint160(address(ARB_INSTANCE)));
+                context[1] = callingContext;
+            }
+            {
+                uint256[] memory calculationsContext = new uint256[](0);
+                context[2] = calculationsContext;
+            }
+            {
+                uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                inputsContext[0] = uint256(uint160(address(USDT_TOKEN)));
+                context[3] = inputsContext;
+            }
+            {
+                uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                outputsContext[0] = uint256(uint160(address(XBLOCK_TOKEN)));
+                context[4] = outputsContext;
+            }
+        }
+    }
+
+    function getBuyOrderContext(uint256 orderHash) internal view returns (uint256[][] memory context) {
+        // Buy Order Context
+        context = new uint256[][](5);
+        {
+            {
+                uint256[] memory baseContext = new uint256[](2);
+                context[0] = baseContext;
+            }
+            {
+                uint256[] memory callingContext = new uint256[](3);
+                // order hash
+                callingContext[0] = orderHash;
+                // owner
+                callingContext[1] = uint256(uint160(address(ORDERBOOK)));
+                // counterparty
+                callingContext[2] = uint256(uint160(address(ARB_INSTANCE)));
+                context[1] = callingContext;
+            }
+            {
+                uint256[] memory calculationsContext = new uint256[](0);
+                context[2] = calculationsContext;
+            }
+            {
+                uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                inputsContext[0] = uint256(uint160(address(XBLOCK_TOKEN)));
+                context[3] = inputsContext;
+            }
+            {
+                uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+                outputsContext[0] = uint256(uint160(address(USDT_TOKEN)));
+                context[4] = outputsContext;
+            }
+        }
     }
 
     function getEncodedBuyRoute() internal view returns (bytes memory) {
