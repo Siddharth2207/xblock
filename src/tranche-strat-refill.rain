@@ -52,6 +52,7 @@
   );
 
 #calculate-io
+  io-ratio-multiplier:,
   tranche-space-now
   tranche-space-available
   tranche-total-size: call<'calculate-tranche 3>(),
@@ -59,15 +60,22 @@
     base-io-ratio
     decimal18-floor(tranche-space-now)
   ),
-  usd-eth: uniswap-v3-twap-output-ratio(dai 18 weth 18 twap-duration 0 [uniswap-v3-fee-low]),
   tranche-available-size: decimal18-mul(
     tranche-total-size
     tranche-space-available
   ),
   eth-tranch-io-ratio: decimal18-mul(
     tranche-io-ratio
-    usd-eth
+    io-ratio-multiplier
   );
+
+#calculate-io-sell
+  usd-eth: uniswap-v3-twap-output-ratio(dai 18 weth 18 twap-duration 0 [uniswap-v3-fee-low]),
+  amount io-ratio: call<'calculate-io 2>(usd-eth);
+
+#calculate-io-buy
+  eth-usd: uniswap-v3-twap-output-ratio(weth 18 dai 18 twap-duration 0 [uniswap-v3-fee-low]),
+  amount io-ratio: call<'calculate-io 2>(eth-usd);
 
 #handle-io
   /* move in tranche space */

@@ -224,7 +224,7 @@ contract XBlockStratUtil is Test {
         vm.stopPrank();
     }
 
-     function getTrancheRefillOrder() internal returns (bytes memory trancheRefill) {
+     function getTrancheRefillBuyOrder() internal returns (bytes memory trancheRefill) {
         string[] memory inputs = new string[](9);
         inputs[0] = "rain";
         inputs[1] = "dotrain";
@@ -232,7 +232,22 @@ contract XBlockStratUtil is Test {
         inputs[3] = "-i";
         inputs[4] = "./src/tranche-strat-refill.rain";
         inputs[5] = "--entrypoints";
-        inputs[6] = "calculate-io";
+        inputs[6] = "calculate-io-buy";
+        inputs[7] = "--entrypoints";
+        inputs[8] = "handle-io";
+
+        trancheRefill = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
+    }
+
+    function getTrancheRefillSellOrder() internal returns (bytes memory trancheRefill) {
+        string[] memory inputs = new string[](9);
+        inputs[0] = "rain";
+        inputs[1] = "dotrain";
+        inputs[2] = "compose";
+        inputs[3] = "-i";
+        inputs[4] = "./src/tranche-strat-refill.rain";
+        inputs[5] = "--entrypoints";
+        inputs[6] = "calculate-io-sell";
         inputs[7] = "--entrypoints";
         inputs[8] = "handle-io";
 
@@ -324,7 +339,7 @@ contract XBlockStratUtil is Test {
     function getSubparserPrelude() internal view returns (bytes memory) {
         bytes memory RAINSTRING_OB_SUBPARSER = bytes(
             string.concat(
-                "using-words-from ", address(OB_SUPARSER).toHexString(), " ", address(UNISWAP_WORDS).toHexString()
+                "using-words-from ", address(OB_SUPARSER).toHexString(), " ", address(UNISWAP_WORDS).toHexString(), " "
             )
         );
         return RAINSTRING_OB_SUBPARSER;

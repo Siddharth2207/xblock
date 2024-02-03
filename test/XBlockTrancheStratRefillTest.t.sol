@@ -52,18 +52,9 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         return IO(address(WETH_TOKEN), 18, VAULT_ID);
     }
 
-    function testTrancheRefillParser() public {
+    function testTrancheRefillBuyOrder() public {
 
-        launchLockToken(address(ARB_INSTANCE));
-
-        // Simple Swap Works once the token is lauched.
-        // moveUniswapV3Price(
-        //     address(WETH_TOKEN),
-        //     address(LOCK_TOKEN),
-        //     WETH_TOKEN_HOLDER,
-        //     1e18,
-        //     getEncodedLockBuyRoute()
-        // ); 
+        launchLockToken(address(ARB_INSTANCE)); 
         {
             uint256 depositAmount = 1e18;
             giveTestAccountsTokens(WETH_TOKEN, WETH_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
@@ -71,11 +62,30 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         }
         OrderV2 memory trancheOrder;  
         {
-            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillOrder());
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillBuyOrder());
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, lockIo(), wethIo());
         }
 
         takeOrder(trancheOrder, getEncodedLockBuyRoute());
+
+        
+    }
+
+    function testTrancheRefillSellOrder() public {
+
+        launchLockToken(address(ARB_INSTANCE)); 
+        {
+            uint256 depositAmount = 1e18;
+            giveTestAccountsTokens(LOCK_TOKEN, LOCK_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
+            depositTokens(TEST_ORDER_OWNER, LOCK_TOKEN, VAULT_ID, depositAmount);
+        }
+        OrderV2 memory trancheOrder;  
+        {
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillSellOrder());
+            trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, wethIo(), lockIo());
+        }
+
+        takeOrder(trancheOrder, getEncodedLockSellRoute());
 
         
     }
