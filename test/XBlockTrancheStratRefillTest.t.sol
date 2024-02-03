@@ -36,10 +36,11 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     using SafeERC20 for IERC20;
     address constant TEST_ORDER_OWNER = address(0x84723849238); 
 
-    function launchLockToken(address orderBook) public { 
+    function launchLockToken(address arbContract) public { 
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
-        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(orderBook,true);
+        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(arbContract,true);
+
         vm.stopPrank();
     }
 
@@ -53,7 +54,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
     function testTrancheRefillParser() public {
 
-        launchLockToken(address(ORDERBOOK));
+        launchLockToken(address(ARB_INSTANCE));
 
         // Simple Swap Works once the token is lauched.
         // moveUniswapV3Price(
