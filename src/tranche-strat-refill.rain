@@ -2,11 +2,13 @@
 #base-tranche-size 1000e18
 #tranche-growth-factor 11e17
 #base-io-ratio 101e16
+#tranche-space-key 0
+#update-time-key 1
 
 #calculate-tranche
   /* where are we in tranche space? */
-  tranche-space-before: get(hash(order-hash() "tranche-space")),
-  last-update-time: get(hash(order-hash() "update-time")),
+  tranche-space-before: get(hash(order-hash() tranche-space-key)),
+  last-update-time: get(hash(order-hash() update-time-key)),
   /* would be nice if we had saturating sub here */
   tranche-space-now: decimal18-sub(
       tranche-space-before
@@ -48,9 +50,9 @@
 #handle-io
   /* move in tranche space */
   tranche-space-now
-  tranche-space-available
+  _
   tranche-total-size: call<'calculate-tranche 3>(),
-  /* the int add here is a hack because we don't have decimal 18 div that rounds up */
+  /* the int add here is a hack because we dont have decimal 18 div that rounds up */
   tranche-diff: int-add(1 decimal18-div(
       decimal18-scale18<0>(output-vault-balance-decrease())
       decimal18-scale18<0>(tranche-total-size)
@@ -59,5 +61,5 @@
       tranche-space-now
       tranche-diff
   ),
-  :set(hash(order-hash() "tranche-space") tranche-space-after),
-  :set(hash(order-hash() "update-time") block-timestamp());
+  :set(hash(order-hash() tranche-space-key) tranche-space-after),
+  :set(hash(order-hash() update-time-key) block-timestamp());
