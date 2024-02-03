@@ -22,7 +22,7 @@
   last-update-time: get(hash(order-hash() update-time-key)),
   /* would be nice if we had saturating sub here */
   tranche-space-now: decimal18-sub(
-    tranche-space-before
+    tranche-space-before  
     decimal18-min(
       tranche-space-before
       decimal18-mul(
@@ -72,7 +72,7 @@
     decimal18-scale18<0>(tranche-total-size)
   ),
   tranche-space-diff-snapped: if(
-    lt(decimal18-sub(decimal18-ceil(tranche-space-diff) tranche-space-diff) 1e16)
+    less-than(decimal18-sub(decimal18-ceil(tranche-space-diff) tranche-space-diff) 1e16)
     decimal18-ceil(tranche-space-diff)
     tranche-space-diff
   ),
