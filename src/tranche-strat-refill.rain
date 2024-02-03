@@ -6,6 +6,16 @@
 #tranche-space-key 0
 #update-time-key 1
 
+/**
+ * To calculate a tranche without looping constructs, we have the idea of a 1D
+ * tranche space that has a lower bound at 0 and we move through it linearly
+ * as trades are made. Every decimal 18 unit of tranche space is a tranche.
+ * The amount and price is derived from where we are in tranche space, and the
+ * amount that we move through tranche space per trade is derived from real vault
+ * movements.
+ * Tranches are healed at a constant rate in tranche space, which maps to a non
+ * linear rate in token space, according to the derived relationship.
+ */
 #calculate-tranche
   /* where are we in tranche space? */
   tranche-space-before: get(hash(order-hash() tranche-space-key)),
@@ -57,13 +67,18 @@
   _
   tranche-total-size: call<'calculate-tranche 3>(),
   /* the int add here is a hack because we dont have decimal 18 div that rounds up */
-  tranche-diff: int-add(1 decimal18-div(
+  tranche-diff: decimal18-div(
     decimal18-scale18<0>(output-vault-balance-decrease())
     decimal18-scale18<0>(tranche-total-size)
-  )),
+  ),
+  tranche-diff-snapped: if(
+    lt(decimal18-sub(decimal18-ceil(tranche-diff) tranche-diff) 1e16)
+    decimal18-ceil(tranche-diff)
+    tranche-diff
+  ),
   tranche-space-after: decimal18-add(
     tranche-space-now
-    tranche-diff
+    tranche-diff-snapped
   ),
   :set(hash(order-hash() tranche-space-key) tranche-space-after),
   :set(hash(order-hash() update-time-key) block-timestamp());
