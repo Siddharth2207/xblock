@@ -227,9 +227,9 @@ contract XBlockStratUtil is Test {
         inputs[3] = "-i";
         inputs[4] = "./src/TrancheStrat.rain";
         inputs[5] = "--entrypoints";
-        inputs[6] = "sell-order-calculate-io";
+        inputs[6] = "calculate-io-sell";
         inputs[7] = "--entrypoints";
-        inputs[8] = "sell-order-handle-io";
+        inputs[8] = "handle-io";
 
         trancheSellOrder = bytes.concat(getObSubparserPrelude(), vm.ffi(inputs));
     }
