@@ -10,7 +10,7 @@ import {
     SourceIndexV2,
     StateNamespace,
     LibNamespace,
-    FullyQualifiedNamespace    
+    FullyQualifiedNamespace
 } from "test/util/XBlockStratUtils.sol";
 import {LibEncodedDispatch} from "rain.orderbook/lib/rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
 import {
@@ -32,7 +32,7 @@ contract XBlockStratTest is XBlockStratUtil {
     using LibFixedPointDecimalArithmeticOpenZeppelin for uint256;
     using LibFixedPointDecimalScale for uint256;
 
-    address constant TEST_ORDER_OWNER = address(0x84723849238); 
+    address constant TEST_ORDER_OWNER = address(0x84723849238);
 
     function testTrancheSellOrderHappyFork() public {
         {
@@ -66,7 +66,7 @@ contract XBlockStratTest is XBlockStratUtil {
         }
 
 
-    } 
+    }
 
     function testTrancheBuyOrderHappyFork() public {
         {
@@ -208,7 +208,7 @@ contract XBlockStratTest is XBlockStratUtil {
                 duRatio = stack[5];
             }
         }
-        {   
+        {
             // Set initial value for the down-up ratio to be the max.
             uint256 duRatio = uint256(11e18).fixedPointDiv(1e18, Math.Rounding.Down);
             for (uint256 i = 0; i < 10; i++) {
@@ -237,7 +237,7 @@ contract XBlockStratTest is XBlockStratUtil {
                 // Cooldown
                 vm.warp(block.timestamp + TARGET_COOLDOWN_18.fixedPointMul(2e18, Math.Rounding.Down) + 1);
 
-                // Assert that down-up ratio is decreasing when the price is decreasing. 
+                // Assert that down-up ratio is decreasing when the price is decreasing.
                 assertLe(stack[5], duRatio);
                 duRatio = stack[5];
             }
@@ -354,7 +354,7 @@ contract XBlockStratTest is XBlockStratUtil {
         // Increase the block time and check if the call succeeds
         vm.warp(block.timestamp + 1);
         takeOrder(sellOrder, getEncodedSellRoute());
-    
+
     }
 
     function testBuyOrderTwapCheck() public {
@@ -368,7 +368,7 @@ contract XBlockStratTest is XBlockStratUtil {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getBuyOrder());
             buyOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, xBlockIo(), usdtIo());
         }
-        
+
         moveUniswapV3Price(
                     address(XBLOCK_TOKEN),
                     address(USDT_TOKEN),
@@ -377,7 +377,7 @@ contract XBlockStratTest is XBlockStratUtil {
                     getEncodedSellRoute()
         );
 
-        // Revert if the price changes within the same block time 
+        // Revert if the price changes within the same block time
         vm.expectRevert(bytes("OLD"));
         takeOrder(buyOrder, getEncodedBuyRoute());
 
@@ -434,7 +434,7 @@ contract XBlockStratTest is XBlockStratUtil {
             // Update last value
             lastValue = currentValue;
         }
-    } 
+    }
 
 
 }

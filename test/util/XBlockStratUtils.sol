@@ -310,7 +310,7 @@ contract XBlockStratUtil is Test {
         return RAINSTRING_OB_SUBPARSER;
     }
 
-    
+
 
     function getSellOrderContext(uint256 orderHash) internal view returns (uint256[][] memory context) {
         // Sell Order Context
