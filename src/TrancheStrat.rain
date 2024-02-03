@@ -1,0 +1,51 @@
+#allowed-counterparty 0xb4ffa641e5dA49F7466142E8418622CB64dBe86B
+#initial-buy-ratio 2000e18
+#initial-sell-ratio 50e13
+#amount-per-batch 100e18
+#cooldown 300
+#increment-per-batch 101e16
+
+#prelude
+:ensure<0>(equal-to(allowed-counterparty order-counterparty())),
+batch-start-info-k : order-hash(),
+batch-start-info: get(batch-start-info-k),
+batch-start-time: bitwise-decode<32 32>(batch-start-info),
+:ensure<1>(greater-than(block-timestamp() int-add(batch-start-time cooldown))),
+batch-index batch-remaining: call<'calculate-batch 2>(0);
+
+#sell-order-calculate-io
+batch-index batch-remaining: call<'prelude 2>(),
+io-ratio: decimal18-mul(initial-sell-ratio decimal18-power-int(increment-per-batch batch-index)),
+amount: decimal18-div(batch-remaining io-ratio),
+ratio: io-ratio;
+
+#sell-order-handle-io
+:call<'handle-io 0>(input-vault-balance-increase());
+
+#buy-order-calculate-io
+batch-index batch-remaining: call<'prelude 2>(),
+io-ratio: decimal18-mul(initial-buy-ratio decimal18-power-int(increment-per-batch batch-index)),
+amount: batch-remaining,
+ratio: io-ratio;
+
+#buy-order-handle-io
+:call<'handle-io 0>(output-vault-balance-decrease());
+
+#handle-io
+usdt-amount-diff: ,
+batch-start-info-k: order-hash(),
+total-usdt18-k: hash(batch-start-info-k),
+new-total-usdt18 new-batch-index _: call<'calculate-batch 3>(decimal18-scale18<6>(usdt-amount-diff)),
+batch-start-info: get(batch-start-info-k),
+batch-start-index: bitwise-decode<0 32>(batch-start-info),
+batch-start-time: bitwise-decode<32 32>(batch-start-info),
+new-batch-info : if(greater-than(new-batch-index batch-start-index) bitwise-encode<32 32>(block-timestamp() bitwise-encode<0 32>(new-batch-index 0)) batch-start-info),
+:set(batch-start-info-k new-batch-info),
+:set(total-usdt18-k new-total-usdt18);
+
+#calculate-batch
+usdt18-amount: ,
+total-usdt18-k: hash(order-hash()),
+new-total-usdt18-amount: decimal18-add(get(total-usdt18-k) usdt18-amount),
+new-batch-index: int-div(new-total-usdt18-amount amount-per-batch),
+new-batch-remaining: decimal18-sub(int-mul(int-add(new-batch-index 1) amount-per-batch) new-total-usdt18-amount);
