@@ -39,11 +39,30 @@ contract XBlockModelling is XBlockStratUtil {
     address constant OUTPUT_ADDRESS = address(USDT_TOKEN);
 
     function test_trancheModelling() public {
-        uint256[] memory stack = eval(getTrancheSellOrder());
-        // if (vm.exists('./test/stacks.csv')) vm.removeFile('./test/stacks.csv');
+        FullyQualifiedNamespace namespace =
+            LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
+        if (vm.exists('./test/csvs/tranche-space-stack.csv')) vm.removeFile('./test/csvs/tranche-space-stack.csv');
 
-        for (uint256 i = 0; i < stack.length; i++) {
-            console2.logUint(stack[i]);
+
+        for (uint256 i = 0; i < 200; i++) {
+        
+            uint256 trancheSpace = uint256(1e17*i);
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace), abi.encodePacked(trancheSpace));
+            uint256[] memory stack = eval(getTrancheRefillSellOrder());
+
+            string memory line = string.concat(
+                    uint2str(trancheSpace),
+                    ",",
+                    uint2str(stack[1]),
+                    ",",
+                    uint2str(stack[0])
+            );
+
+            vm.writeLine('./test/csvs/tranche-space-stack.csv', line);
+
+            for (uint256 i = 1; i < stack.length; i++) {
+                console2.logUint(stack[i]);
+            }
         }
     }
 
@@ -100,5 +119,25 @@ contract XBlockModelling is XBlockStratUtil {
         return context;
     }
 
-
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint j = _i;
+        uint len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint k = len;
+        while (_i != 0) {
+            k = k-1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
+    }
 }
