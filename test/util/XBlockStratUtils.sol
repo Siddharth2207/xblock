@@ -219,6 +219,45 @@ contract XBlockStratUtil is Test {
         vm.stopPrank();
     }
 
+    function getTrancheSellOrder() internal returns (bytes memory trancheSellOrder) {
+        string[] memory inputs = new string[](9);
+        inputs[0] = "rain";
+        inputs[1] = "dotrain";
+        inputs[2] = "compose";
+        inputs[3] = "-i";
+        inputs[4] = "./src/TrancheStrat.rain";
+        inputs[5] = "--entrypoints";
+        inputs[6] = "sell-order-calculate-io";
+        inputs[7] = "--entrypoints";
+        inputs[8] = "sell-order-handle-io";
+
+        trancheSellOrder = bytes.concat(getObSubparserPrelude(), vm.ffi(inputs));
+    }
+
+    function getTrancheBuyOrder() internal returns (bytes memory trancheBuyOrder) {
+        string[] memory inputs = new string[](9);
+        inputs[0] = "rain";
+        inputs[1] = "dotrain";
+        inputs[2] = "compose";
+        inputs[3] = "-i";
+        inputs[4] = "./src/TrancheStrat.rain";
+        inputs[5] = "--entrypoints";
+        inputs[6] = "buy-order-calculate-io";
+        inputs[7] = "--entrypoints";
+        inputs[8] = "buy-order-handle-io";
+
+        trancheBuyOrder = bytes.concat(getObSubparserPrelude(), vm.ffi(inputs));
+    }
+
+    function getObSubparserPrelude() internal view returns (bytes memory) {
+        bytes memory RAINSTRING_OB_SUBPARSER = bytes(
+            string.concat(
+                "using-words-from ", address(OB_SUPARSER).toHexString(), " "
+            )
+        );
+        return RAINSTRING_OB_SUBPARSER;
+    }
+
     function getSellOrder() internal returns (bytes memory sellOrder) {
         string[] memory inputs = new string[](9);
         inputs[0] = "rain";
@@ -270,6 +309,8 @@ contract XBlockStratUtil is Test {
         );
         return RAINSTRING_OB_SUBPARSER;
     }
+
+    
 
     function getSellOrderContext(uint256 orderHash) internal view returns (uint256[][] memory context) {
         // Sell Order Context

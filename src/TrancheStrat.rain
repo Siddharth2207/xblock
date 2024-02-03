@@ -1,12 +1,10 @@
-#allowed-counterparty 0xb4ffa641e5dA49F7466142E8418622CB64dBe86B
-#initial-buy-ratio 2000e18
-#initial-sell-ratio 50e13
+#initial-buy-ratio 1e18
+#initial-sell-ratio 5e16
 #amount-per-batch 100e18
 #cooldown 300
 #increment-per-batch 101e16
 
 #prelude
-:ensure<0>(equal-to(allowed-counterparty order-counterparty())),
 batch-start-info-k : order-hash(),
 batch-start-info: get(batch-start-info-k),
 batch-start-time: bitwise-decode<32 32>(batch-start-info),
