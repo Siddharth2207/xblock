@@ -72,9 +72,9 @@
     decimal18-scale18<0>(tranche-total-size)
   ),
   tranche-space-diff-snapped: if(
-    lt(decimal18-sub(decimal18-ceil(tranche-diff) tranche-diff) 1e16)
-    decimal18-ceil(tranche-diff)
-    tranche-diff
+    lt(decimal18-sub(decimal18-ceil(tranche-space-diff) tranche-space-diff) 1e16)
+    decimal18-ceil(tranche-space-diff)
+    tranche-space-diff
   ),
   tranche-space-after: decimal18-add(
     tranche-space-now
