@@ -26,16 +26,20 @@ import {
     IO
 } from "src/XBlockStratTrancheRefill.sol";
 
-interface IHoudiniSwapToken { function launch() external; }
+interface IHoudiniSwapToken { 
+    function launch() external;
+    function setAutomatedMarketMakerPair(address account,bool value) external;
+}
 
 contract XBlockTrancheStratRefillTest is XBlockStratUtil { 
 
     using SafeERC20 for IERC20;
     address constant TEST_ORDER_OWNER = address(0x84723849238); 
 
-    function launchLockToken() public { 
+    function launchLockToken(address orderBook) public { 
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
+        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(orderBook,true);
         vm.stopPrank();
     }
 
@@ -49,7 +53,16 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
     function testTrancheRefillParser() public {
 
-        launchLockToken();
+        launchLockToken(address(ORDERBOOK));
+
+        // Simple Swap Works once the token is lauched.
+        // moveUniswapV3Price(
+        //     address(WETH_TOKEN),
+        //     address(LOCK_TOKEN),
+        //     WETH_TOKEN_HOLDER,
+        //     1e18,
+        //     getEncodedLockBuyRoute()
+        // ); 
         {
             uint256 depositAmount = 1e18;
             giveTestAccountsTokens(WETH_TOKEN, WETH_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
