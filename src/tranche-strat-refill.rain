@@ -1,0 +1,63 @@
+#tranche-space-per-second 11574074e14
+#base-tranche-size 1000e18
+#tranche-growth-factor 11e17
+#base-io-ratio 101e16
+
+#calculate-tranche
+  /* where are we in tranche space? */
+  tranche-space-before: get(hash(order-hash() "tranche-space")),
+  last-update-time: get(hash(order-hash() "update-time")),
+  /* would be nice if we had saturating sub here */
+  tranche-space-now: decimal18-sub(
+      tranche-space-before
+      decimal18-min(
+          tranche-space-before
+          decimal18-mul(
+              decimal18-scale18<0>(
+                  int-sub(
+                      block-timestamp()
+                      last-update-time
+                  )
+              )
+              tranche-space-per-second
+          )
+      )
+  ),
+  tranche-space-available: decimal18-sub(
+      1e18
+      decimal18-frac(tranche-space-now)
+  ),
+  tranche-total-size: decimal18-mul(
+      base-tranche-size
+      decimal18-power(tranche-growth-factor decimal18-floor(tranche-space-now))
+  );
+
+#calculate-io
+  tranche-space-now
+  tranche-space-available
+  tranche-total-size: call<'calculate-tranche 3>(),
+  tranche-available-size: decimal18-mul(
+      tranche-total-size
+      tranche-space-available
+  ),
+  tranche-io-ratio: decimal18-power(
+      base-io-ratio
+      decimal18-floor(tranche-space-now)
+  );
+
+#handle-io
+  /* move in tranche space */
+  tranche-space-now
+  tranche-space-available
+  tranche-total-size: call<'calculate-tranche 3>(),
+  /* the int add here is a hack because we don't have decimal 18 div that rounds up */
+  tranche-diff: int-add(1 decimal18-div(
+      decimal18-scale18<0>(output-vault-balance-decrease())
+      decimal18-scale18<0>(tranche-total-size)
+  )),
+  tranche-space-after: decimal18-add(
+      tranche-space-now
+      tranche-diff
+  ),
+  :set(hash(order-hash() "tranche-space") tranche-space-after),
+  :set(hash(order-hash() "update-time") block-timestamp());
