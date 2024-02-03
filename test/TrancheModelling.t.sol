@@ -39,9 +39,11 @@ contract XBlockModelling is XBlockStratUtil {
     address constant OUTPUT_ADDRESS = address(USDT_TOKEN);
 
     function test_trancheModelling() public {
+        string memory file = './test/csvs/tranche-space-stack.csv';
+
         FullyQualifiedNamespace namespace =
             LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
-        if (vm.exists('./test/csvs/tranche-space-stack.csv')) vm.removeFile('./test/csvs/tranche-space-stack.csv');
+        if (vm.exists(file)) vm.removeFile(file);
 
 
         for (uint256 i = 0; i < 200; i++) {
@@ -58,7 +60,43 @@ contract XBlockModelling is XBlockStratUtil {
                     uint2str(stack[0])
             );
 
-            vm.writeLine('./test/csvs/tranche-space-stack.csv', line);
+            vm.writeLine(file, line);
+
+            for (uint256 i = 1; i < stack.length; i++) {
+                console2.logUint(stack[i]);
+            }
+        }
+    }
+
+    function test_trancheAmounts() public {
+        string memory file = './test/csvs/tranches.csv';
+        FullyQualifiedNamespace namespace =
+            LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
+        if (vm.exists(file)) vm.removeFile(file);
+
+        vm.writeLine(file, string.concat(
+            "Tranche",
+            ",",
+            "Tranche Amount",
+            ",",
+            "Tranche Price"
+        
+        ));
+        for (uint256 i = 0; i < 200; i++) {
+        
+            uint256 trancheSpace = uint256(1e18*i);
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace), abi.encodePacked(trancheSpace));
+            uint256[] memory stack = eval(getTrancheRefillSellOrder());
+
+            string memory line = string.concat(
+                    uint2str(trancheSpace / 1e18),
+                    ",",
+                    uint2str(stack[1]),
+                    ",",
+                    uint2str(stack[0] * 1e18 / stack[2])
+            );
+
+            vm.writeLine(file, line);
 
             for (uint256 i = 1; i < stack.length; i++) {
                 console2.logUint(stack[i]);
