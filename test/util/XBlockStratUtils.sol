@@ -12,7 +12,10 @@ import {
 import {IParserV1} from "rain.orderbook/lib/rain.interpreter/src/interface/IParserV1.sol";
 import {IInterpreterStoreV1} from "rain.orderbook/lib/rain.interpreter/src/interface/IInterpreterStoreV1.sol";
 import {IInterpreterStoreV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterStoreV2.sol";
-import {IInterpreterV2,SourceIndexV2} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterV2.sol";
+import {
+    IInterpreterV2,
+    SourceIndexV2
+} from "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IInterpreterV2.sol";
 import {IExpressionDeployerV3} from
     "rain.orderbook/lib/rain.interpreter/src/interface/unstable/IExpressionDeployerV3.sol";
 import {OrderBook} from "rain.orderbook/src/concrete/ob/OrderBook.sol";
@@ -42,7 +45,11 @@ import {
 } from "src/XBlockStrat.sol";
 import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
 import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol";
-import {StateNamespace, LibNamespace, FullyQualifiedNamespace} from "rain.orderbook/lib/rain.interpreter/src/lib/ns/LibNamespace.sol";
+import {
+    StateNamespace,
+    LibNamespace,
+    FullyQualifiedNamespace
+} from "rain.orderbook/lib/rain.interpreter/src/lib/ns/LibNamespace.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
@@ -250,11 +257,8 @@ contract XBlockStratUtil is Test {
     }
 
     function getObSubparserPrelude() internal view returns (bytes memory) {
-        bytes memory RAINSTRING_OB_SUBPARSER = bytes(
-            string.concat(
-                "using-words-from ", address(OB_SUPARSER).toHexString(), " "
-            )
-        );
+        bytes memory RAINSTRING_OB_SUBPARSER =
+            bytes(string.concat("using-words-from ", address(OB_SUPARSER).toHexString(), " "));
         return RAINSTRING_OB_SUBPARSER;
     }
 
@@ -309,8 +313,6 @@ contract XBlockStratUtil is Test {
         );
         return RAINSTRING_OB_SUBPARSER;
     }
-
-
 
     function getSellOrderContext(uint256 orderHash) internal view returns (uint256[][] memory context) {
         // Sell Order Context

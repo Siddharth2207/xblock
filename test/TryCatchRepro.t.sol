@@ -3,29 +3,82 @@ pragma solidity =0.8.19;
 
 import {Test} from "forge-std/Test.sol";
 
-contract Foo {}
+contract Foo {
+    function notImplemented() external {}
+}
+
+contract Bar {}
 
 interface INotImplemented {
     function notImplemented() external returns (address);
 }
 
 contract TryCatchReproTest is Test {
+    // This won't revert because foo does implement `notImplemented`.
+    function testTryCatchFooRevertNotReverting() external {
+        address foo = address(new Foo());
+        Foo(foo).notImplemented();
+    }
 
-    // Of course we expect this to revert.
-    // We are calling a function that isn't implemented.
-    function testTryCatchRevertNotTrying() external {
+    // This DOES revert because the interface specifies a return that isn't
+    // implemented on the contract.
+    function testTryCatchFooRevertReverting() external {
+        address foo = address(new Foo());
+        // This errors so weirdly that vm.expectRevert() doesn't even see it.
+        INotImplemented(foo).notImplemented();
+    }
+
+    // Weirdly, if we add vm.expectRevert to the exact same scenario as above,
+    // the test says no revert happened.
+    function testTryCatchFooRevertRevertingWithExpectRevert() external {
         address foo = address(new Foo());
         vm.expectRevert();
         INotImplemented(foo).notImplemented();
     }
 
-    function testTryCatchRevert() external {
+    // What's REALLY a problem is that try/catch also doesn't handle the revert
+    // due to the interface mismatch.
+    function testTryCatchFooRevertRevertingWithTryCatch() external {
         address foo = address(new Foo());
 
-        try INotImplemented(foo).notImplemented() returns (address result) {
-            require(result == address(0), "result should be 0");
+        // This will simply revert, not be caught by the try/catch.
+        try INotImplemented(foo).notImplemented() returns (address) {} catch {}
+    }
+
+    // The try/catch won't revert if we use the contract to dispatch the external
+    // call rather than the interface.
+    function testTryCatchFooRevertNotRevertingWithTryCatch() external {
+        address foo = address(new Foo());
+
+        // Literally we can't even compile this with a `returns` clause. Solc
+        // will prevent us from doing it because it uses the contract definition
+        // instead of the interface here.
+        try Foo(foo).notImplemented() {
+            // We hit this code path.
+            assertTrue(true);
         } catch {
+            assertTrue(false);
         }
     }
 
+    // Of course we expect this to revert.
+    // We are calling a function that isn't implemented on bar.
+    function testTryCatchRevertNotTrying() external {
+        address bar = address(new Bar());
+        vm.expectRevert();
+        INotImplemented(bar).notImplemented();
+    }
+
+    // This won't revert because bar doesn't implement anything that collides
+    // with the function signature, so the try/catch will catch it.
+    function testTryCatchNotRevert() external {
+        address bar = address(new Bar());
+
+        try INotImplemented(bar).notImplemented() returns (address) {
+            // We don't hit this code path.
+            assertTrue(false);
+        } catch {
+            assertTrue(true);
+        }
+    }
 }
