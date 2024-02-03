@@ -40,6 +40,11 @@ import {
     SafeERC20,
     IERC20
 } from "src/XBlockStrat.sol";
+import {
+LOCK_TOKEN,
+WETH_TOKEN
+}
+from "src/XBlockStratTrancheRefill.sol";
 import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
 import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol";
 import {StateNamespace, LibNamespace, FullyQualifiedNamespace} from "rain.orderbook/lib/rain.interpreter/src/lib/ns/LibNamespace.sol";
@@ -57,7 +62,7 @@ contract XBlockStratUtil is Test {
 
     ICloneableFactoryV2 constant CLONE_FACTORY = ICloneableFactoryV2(0x27C062142b9DF4D07191bd2127Def504DC9e9937);
 
-    uint256 constant FORK_BLOCK_NUMBER = 19119822;
+    uint256 constant FORK_BLOCK_NUMBER = 19148722;
     uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
     function selectEthFork() internal {
@@ -217,6 +222,21 @@ contract XBlockStratUtil is Test {
 
         ROUTE_PROCESSOR.processRoute(inputToken, amountIn, outputToken, 0, EXTERNAL_EOA, decodedRoute);
         vm.stopPrank();
+    }
+
+     function getTrancheRefillOrder() internal returns (bytes memory trancheRefill) {
+        string[] memory inputs = new string[](9);
+        inputs[0] = "rain";
+        inputs[1] = "dotrain";
+        inputs[2] = "compose";
+        inputs[3] = "-i";
+        inputs[4] = "./src/tranche-strat-refill.rain";
+        inputs[5] = "--entrypoints";
+        inputs[6] = "calculate-io";
+        inputs[7] = "--entrypoints";
+        inputs[8] = "handle-io";
+
+        trancheRefill = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
     }
 
     function getTrancheSellOrder() internal returns (bytes memory trancheSellOrder) {
@@ -391,6 +411,18 @@ contract XBlockStratUtil is Test {
     function getEncodedSellRoute() internal view returns (bytes memory) {
         bytes memory ROUTE_PRELUDE =
             hex"0225931894a86D47441213199621F1F2994e1c39Aa01ffff0189eebA49E12d06A26A25F83719914f173256CE7201";
+        return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
+    }
+
+    function getEncodedLockBuyRoute() internal view returns (bytes memory) {
+        bytes memory ROUTE_PRELUDE =
+            hex"02C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc201ffff017D45a2557bECd766A285d07a4701f5c64D716e2f00";
+        return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
+    }
+
+    function getEncodedLockSellRoute() internal view returns (bytes memory) {
+        bytes memory ROUTE_PRELUDE =
+            hex"02922D8563631B03C2c4cf817f4d18f6883AbA010901ffff017D45a2557bECd766A285d07a4701f5c64D716e2f01";
         return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
     }
 
