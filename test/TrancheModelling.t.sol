@@ -95,10 +95,10 @@ contract XBlockModelling is XBlockStratUtil {
         
         ));
 
-        for (uint256 i = 0; i < 200; i++) {
-            uint256 time = 60*i;
+        for (uint256 i = 0; i < (48*2); i++) {
+            uint256 time = 60*30*i;
             vm.warp(time);
-            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(uint256(3e18)));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(uint256(325e16)));
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encode(uint256(1)));
             uint256[] memory stack = eval(getTrancheRefillSellOrder());
 
@@ -136,7 +136,7 @@ contract XBlockModelling is XBlockStratUtil {
         
             uint256 trancheSpace = uint256(1e18*i);
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(trancheSpace));
-            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(uint256(1e18)));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encode(block.timestamp));
             uint256[] memory stack = eval(getTrancheRefillSellOrder());
 
             string memory line = string.concat(

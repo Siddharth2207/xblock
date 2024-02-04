@@ -104,20 +104,29 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             Vm.Log[] memory entries = vm.getRecordedLogs();
             uint256 amount;
             uint256 ratio;
-            uint256 output;
-            uint256 input;
+            // uint256 output;
+            // uint256 input;
             for (uint256 j = 0; j < entries.length; j++) {
                 if (entries[j].topics[0] == keccak256("Context(address,uint256[][])")) {
                     (, uint256[][] memory context) = abi.decode(entries[j].data, (address, uint256[][]));
                     amount = context[2][0];
                     ratio = context[2][1];
-                    input = context[3][4];
-                    output = context[4][4];
+                    // input = context[3][4];
+                    // output = context[4][4];
                 }
             }
 
+            uint256 time = block.timestamp + 60 * 30; // moving forward 30 minutes
+
+            // if (i > 30) {
+            //     time = time + 60*60*2; // 2 hours
+            // }
+            // if (i > 80) {
+            //     time = time + 60*60+4; // 4 hours
+            // }
+
             string memory line = string.concat(
-                    uint2str(block.timestamp),
+                    uint2str(time),
                     ",",
                     uint2str(amount),
                     ",",
@@ -126,7 +135,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
             vm.writeLine(file, line);
 
-            vm.warp(block.timestamp + 60);
+            vm.warp(time);
         }
 
         vm.stopPrank();
