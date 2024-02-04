@@ -2,7 +2,8 @@
 #tranche-space-heal-delay 3600
 #base-tranche-size 1000e18
 #tranche-growth-factor 11e17
-#base-io-ratio 101e16
+#base-io-ratio 111e16
+#io-ratio-growth-factor 105e16
 #tranche-space-key 0
 #update-time-key 1
 #dai 0x6B175474E89094C44Da98b954EedeAC495271d0F
@@ -20,10 +21,8 @@
  * linear rate in token space, according to the derived relationship.
  */
 #calculate-tranche
-  /* where are we in tranche space? */
   tranche-space-before: get(hash(order-hash() tranche-space-key)),
   last-update-time: get(hash(order-hash() update-time-key)),
-  /* would be nice if we had saturating sub here */
   tranche-space-now: decimal18-sub(
     tranche-space-before
     decimal18-min(
@@ -56,9 +55,12 @@
   tranche-space-now
   tranche-space-available
   tranche-total-size: call<'calculate-tranche 3>(),
-  tranche-io-ratio: decimal18-power(
+  tranche-io-ratio: decimal18-mul(
     base-io-ratio
-    decimal18-floor(tranche-space-now)
+    decimal18-power(
+      io-ratio-growth-factor
+      decimal18-floor(tranche-space-now)
+    )
   ),
   tranche-available-size: decimal18-mul(
     tranche-total-size
@@ -78,11 +80,9 @@
   amount io-ratio: call<'calculate-io 2>(eth-usd);
 
 #handle-io
-  /* move in tranche space */
   tranche-space-now
   _
   tranche-total-size: call<'calculate-tranche 3>(),
-  /* the int add here is a hack because we dont have decimal 18 div that rounds up */
   tranche-space-diff: decimal18-div(
     decimal18-scale18<0>(output-vault-balance-decrease())
     decimal18-scale18<0>(tranche-total-size)
