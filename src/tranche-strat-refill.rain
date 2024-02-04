@@ -4,7 +4,7 @@
 #base-tranche-size-buy 17e17
 #tranche-growth-factor 11e17
 #base-io-ratio 111e16
-#io-ratio-growth-factor 105e16
+#io-ratio-growth-factor 102e16
 #tranche-space-key 0
 #update-time-key 1
 #dai 0x6B175474E89094C44Da98b954EedeAC495271d0F
