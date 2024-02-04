@@ -27,6 +27,10 @@ address constant LOCK_OWNER = address(0xE23B2ecD2B71133086B8e15b78a4a174ea491653
 
 address constant APPROVED_EOA = address(0x19f95a84aa1C48A2c6a7B2d5de164331c86D030C);
 
+address constant DAI_TOKEN_HOLDER = address(0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8);
+
+IERC20 constant DAI_TOKEN = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
+
 /// @dev https://etherscan.io/address/0x827179dD56d07A7eeA32e3873493835da2866976
 IRouteProcessor constant ROUTE_PROCESSOR = IRouteProcessor(address(0x827179dD56d07A7eeA32e3873493835da2866976));
 

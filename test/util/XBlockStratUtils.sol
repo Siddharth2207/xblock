@@ -441,6 +441,12 @@ contract XBlockStratUtil is Test {
         return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
     }
 
+    function getEncodedDaiSellRoute() internal view returns (bytes memory) {
+        bytes memory ROUTE_PRELUDE =
+            hex"026B175474E89094C44Da98b954EedeAC495271d0F01ffff0160594a405d53811d3BC4766596EFD80fd545A27001";
+        return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
+    }
+
     function decodeBits(uint256 operand, uint256 input) internal pure returns (uint256 output) {
         uint256 startBit = operand & 0xFF;
         uint256 length = (operand >> 8) & 0xFF;
