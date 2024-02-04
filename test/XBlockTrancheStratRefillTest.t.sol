@@ -12,7 +12,7 @@ import {
     LibNamespace,
     FullyQualifiedNamespace
 } from "test/util/XBlockStratUtils.sol";
-
+import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
 import {
     LOCK_TOKEN,
     WETH_TOKEN,
@@ -25,7 +25,10 @@ import {
     IERC20,
     IO,
     DAI_TOKEN_HOLDER,
-    DAI_TOKEN
+    DAI_TOKEN,
+    APPROVED_EOA,
+    TakeOrderConfigV2,
+    TakeOrdersConfigV2
 } from "src/XBlockStratTrancheRefill.sol";
 import {LibEncodedDispatch} from "rain.orderbook/lib/rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
 
@@ -39,11 +42,11 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
     address constant TEST_ORDER_OWNER = address(0x84723849238);
 
-    function launchLockToken(address arbContract) public {
+    function launchLockToken(address arbContract,address orderBook) public {
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
         IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(arbContract, true);
-
+        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(orderBook, true);
         vm.stopPrank();
     }
 
@@ -55,10 +58,15 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         return IO(address(WETH_TOKEN), 18, VAULT_ID);
     }
 
-    function testTrancheRefillBuyOrder() public {
-        launchLockToken(address(ARB_INSTANCE));
-        {
-            uint256 depositAmount = 1e18;
+    function testTrancheRefillTakeBuyOrder() public {
+        string memory file = './test/csvs/tranche-amount-io.csv';
+        if (vm.exists(file)) vm.removeFile(file);
+
+        launchLockToken(address(ARB_INSTANCE),address(ORDERBOOK));
+        
+        uint256 maxAmountPerTakeOrder = 1e11;
+        {   
+            uint256 depositAmount = 10000e18;
             giveTestAccountsTokens(WETH_TOKEN, WETH_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
             depositTokens(TEST_ORDER_OWNER, WETH_TOKEN, VAULT_ID, depositAmount);
         }
@@ -68,6 +76,75 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, lockIo(), wethIo());
         }
 
-        takeOrder(trancheOrder, getEncodedLockBuyRoute());
+        uint256 inputIOIndex = 0;
+        uint256 outputIOIndex = 0;
+
+        TakeOrderConfigV2[] memory innerConfigs = new TakeOrderConfigV2[](1);
+
+        innerConfigs[0] = TakeOrderConfigV2(trancheOrder, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
+        TakeOrdersConfigV2 memory takeOrdersConfig =
+            TakeOrdersConfigV2(0, maxAmountPerTakeOrder, type(uint256).max, innerConfigs, "");
+        {
+            giveTestAccountsTokens(LOCK_TOKEN, LOCK_TOKEN_HOLDER, APPROVED_EOA, 10000000e18);
+        }
+        vm.startPrank(APPROVED_EOA);
+        IERC20(address(LOCK_TOKEN)).safeApprove(address(ORDERBOOK), type(uint256).max);
+        
+        for(uint256 i = 0; i < 1000; i++){
+            vm.recordLogs();
+            ORDERBOOK.takeOrders(takeOrdersConfig);
+            Vm.Log[] memory entries = vm.getRecordedLogs();
+            uint256 amount;
+            uint256 ratio;
+            uint256 output;
+            uint256 input;
+            for (uint256 j = 0; j < entries.length; j++) {
+                if (entries[j].topics[0] == keccak256("Context(address,uint256[][])")) {
+                    (, uint256[][] memory context) = abi.decode(entries[j].data, (address, uint256[][]));
+                    amount = context[2][0];
+                    ratio = context[2][1];
+                    input = context[3][4];
+                    output = context[4][4];
+                }
+            }
+
+            string memory line = string.concat(
+                    uint2str(block.timestamp),
+                    ",",
+                    uint2str(amount),
+                    ",",
+                    uint2str(ratio)
+            );
+
+            vm.writeLine(file, line);
+            // console2.log("%s,%s,%s", block.timestamp, ratio, amount);
+            // console2.log("%s,%s,%s", block.timestamp, input, output);
+
+            vm.warp(block.timestamp + 60);
+        }
+
+        vm.stopPrank();
+    }
+
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint j = _i;
+        uint len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint k = len;
+        while (_i != 0) {
+            k = k-1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
 }

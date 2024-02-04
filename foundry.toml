@@ -20,7 +20,8 @@ cbor_metadata = false
 fs_permissions = [
   { access = "read", path = "out/reference/UniswapV2LibraryConcrete.sol/UniswapV2LibraryConcrete.json" },
   { access = "read", path = "out/quoter/Quoter.sol/Quoter.json" },
-  { access = "read", path = "./lib/rain.orderbook/lib/rain.interpreter/meta/RainterpreterExpressionDeployerNPE2.rain.meta"}
+  { access = "read", path = "./lib/rain.orderbook/lib/rain.interpreter/meta/RainterpreterExpressionDeployerNPE2.rain.meta"},
+  { access = "read-write", path = "test/csvs"}
 ]
 
 remappings = [
