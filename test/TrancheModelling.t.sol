@@ -37,6 +37,8 @@ contract XBlockModelling is XBlockStratUtil {
     address constant APPROVED_COUNTERPARTY = address(0x19f95a84aa1C48A2c6a7B2d5de164331c86D030C);
     address constant INPUT_ADDRESS = address(XBLOCK_TOKEN);
     address constant OUTPUT_ADDRESS = address(USDT_TOKEN);
+    uint256 lastUpdateTimeKey = uint256(keccak256(abi.encodePacked(ORDER_HASH, uint256(1))));
+    uint256 trancheSpaceKey = uint256(keccak256(abi.encodePacked(ORDER_HASH, uint256(0))));
 
     function test_trancheModelling() public {
         string memory file = './test/csvs/tranche-space-stack.csv';
@@ -45,15 +47,55 @@ contract XBlockModelling is XBlockStratUtil {
         FullyQualifiedNamespace namespace =
             LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
 
-
         for (uint256 i = 0; i < 200; i++) {
         
             uint256 trancheSpace = uint256(1e17*i);
-            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace), abi.encodePacked(trancheSpace));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encodePacked(trancheSpace));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encodePacked(block.timestamp));
+
             uint256[] memory stack = eval(getTrancheRefillSellOrder());
 
             string memory line = string.concat(
                     uint2str(trancheSpace),
+                    ",",
+                    uint2str(stack[1]),
+                    ",",
+                    uint2str(stack[0])
+            );
+
+            vm.writeLine(file, line);
+
+            for (uint256 i = 1; i < stack.length; i++) {
+                console2.logUint(stack[i]);
+            }
+        }
+    }
+
+    function test_lastUpdateTime() public {
+        string memory file = './test/csvs/last-update-time.csv';
+        if (vm.exists(file)) vm.removeFile(file);
+
+        FullyQualifiedNamespace namespace =
+            LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
+
+        vm.writeLine(file, string.concat(
+            "Time (seconds)",
+            ",",
+            "Amount",
+            ",",
+            "Price"
+        
+        ));
+
+        for (uint256 i = 0; i < 200; i++) {
+            uint256 time = 60*i;
+            vm.warp(time);
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encodePacked(uint256(3e18)));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encodePacked(uint256(1)));
+            uint256[] memory stack = eval(getTrancheRefillSellOrder());
+
+            string memory line = string.concat(
+                    uint2str(time),
                     ",",
                     uint2str(stack[1]),
                     ",",
@@ -82,10 +124,12 @@ contract XBlockModelling is XBlockStratUtil {
             "Tranche Price"
         
         ));
+
         for (uint256 i = 0; i < 200; i++) {
         
             uint256 trancheSpace = uint256(1e18*i);
-            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace), abi.encodePacked(trancheSpace));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(trancheSpace));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encodePacked(uint256(1e18)));
             uint256[] memory stack = eval(getTrancheRefillSellOrder());
 
             string memory line = string.concat(
