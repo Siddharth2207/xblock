@@ -58,8 +58,8 @@ contract XBlockModelling is XBlockStratUtil {
         for (uint256 i = 0; i < 200; i++) {
         
             uint256 trancheSpace = uint256(1e17*i);
-            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encodePacked(trancheSpace));
-            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encodePacked(block.timestamp));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(trancheSpace));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encode(block.timestamp));
 
             uint256[] memory stack = eval(getTrancheRefillSellOrder());
 
@@ -98,8 +98,8 @@ contract XBlockModelling is XBlockStratUtil {
         for (uint256 i = 0; i < 200; i++) {
             uint256 time = 60*i;
             vm.warp(time);
-            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encodePacked(uint256(3e18)));
-            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encodePacked(uint256(1)));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(uint256(3e18)));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encode(uint256(1)));
             uint256[] memory stack = eval(getTrancheRefillSellOrder());
 
             string memory line = string.concat(
@@ -137,7 +137,7 @@ contract XBlockModelling is XBlockStratUtil {
         
             uint256 trancheSpace = uint256(1e18*i);
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(trancheSpace));
-            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encodePacked(uint256(1e18)));
+            vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(uint256(1e18)));
             uint256[] memory stack = eval(getTrancheRefillSellOrder());
 
             string memory line = string.concat(
