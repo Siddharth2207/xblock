@@ -3,6 +3,7 @@ pragma solidity =0.8.19;
 
 import {Vm} from "forge-std/Vm.sol";
 import {console2, Test} from "forge-std/Test.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
 import {
     XBlockStratUtil,
     IInterpreterV2,
@@ -62,12 +63,20 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         string memory file = './test/csvs/tranche-amount-io.csv';
         if (vm.exists(file)) vm.removeFile(file);
 
+        vm.writeLine(file, string.concat(
+            "Timestamp",
+            ",",
+            "Amount",
+            ",",
+            "Price"
+        ));
+
         launchLockToken(address(ARB_INSTANCE),address(ORDERBOOK));
         
-        uint256 maxAmountPerTakeOrder = 1e11;
+        uint256 maxAmountPerTakeOrder = type(uint256).max;
         {   
-            uint256 depositAmount = 10000e18;
-            giveTestAccountsTokens(WETH_TOKEN, WETH_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
+            uint256 depositAmount = type(uint256).max;
+            deal(address(WETH_TOKEN), TEST_ORDER_OWNER, depositAmount);
             depositTokens(TEST_ORDER_OWNER, WETH_TOKEN, VAULT_ID, depositAmount);
         }
         OrderV2 memory trancheOrder;
@@ -84,9 +93,8 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         innerConfigs[0] = TakeOrderConfigV2(trancheOrder, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
         TakeOrdersConfigV2 memory takeOrdersConfig =
             TakeOrdersConfigV2(0, maxAmountPerTakeOrder, type(uint256).max, innerConfigs, "");
-        {
-            giveTestAccountsTokens(LOCK_TOKEN, LOCK_TOKEN_HOLDER, APPROVED_EOA, 10000000e18);
-        }
+
+        deal(address(LOCK_TOKEN), APPROVED_EOA, type(uint256).max);
         vm.startPrank(APPROVED_EOA);
         IERC20(address(LOCK_TOKEN)).safeApprove(address(ORDERBOOK), type(uint256).max);
         
@@ -117,34 +125,10 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             );
 
             vm.writeLine(file, line);
-            // console2.log("%s,%s,%s", block.timestamp, ratio, amount);
-            // console2.log("%s,%s,%s", block.timestamp, input, output);
 
             vm.warp(block.timestamp + 60);
         }
 
         vm.stopPrank();
-    }
-
-    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint j = _i;
-        uint len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint k = len;
-        while (_i != 0) {
-            k = k-1;
-            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        return string(bstr);
     }
 }
