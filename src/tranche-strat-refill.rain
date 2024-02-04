@@ -1,5 +1,5 @@
 #tranche-space-per-second 11574074e14
-#tranche-space-heal-delay 3600
+#tranche-space-heal-delay 300
 #base-tranche-size 1000e18
 #tranche-growth-factor 11e17
 #base-io-ratio 111e16
