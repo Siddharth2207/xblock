@@ -10,6 +10,7 @@
 #weth 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
 #twap-duration 3600
 #test-tranche-space-before !Tranche space is a decimal 18 number representing normalized tranche consumption.
+#test-now !Current block timestamp.
 #test-last-update-time !Last update time is the block timestamp of the last time we moved through tranche space.
 #test-io-ratio-multiplier !Decimal 18 ratio as a multiplier to transform the IO ratio from the batch denomination to the orderbook vault denomination.
 
@@ -29,11 +30,9 @@
  */
 #calculate-tranche
   tranche-space-before
+  now
   last-update-time:,
-  recharge-duration: int-sub<1>(
-    block-timestamp()
-    int-add(last-update-time tranche-space-heal-delay)
-  ),
+  recharge-duration: int-sub<1>(now int-add(last-update-time tranche-space-heal-delay)),
   recharge-tranche-space: decimal18-mul(decimal18-scale18<0>(recharge-duration) tranche-space-per-second),
   tranche-space-now: decimal18-sub<1>(tranche-space-before recharge-tranche-space),
   tranche-space-available: decimal18-sub(1e18 decimal18-frac(tranche-space-now)),
@@ -44,11 +43,12 @@
 
 #calculate-io
   tranche-space-before
+  now
   last-update-time
   io-ratio-multiplier:,
   tranche-space-now
   tranche-space-available
-  tranche-total-size: call<'calculate-tranche 3>(tranche-space-before last-update-time),
+  tranche-total-size: call<'calculate-tranche 3>(tranche-space-before now last-update-time),
   tranche-io-ratio: decimal18-mul(
     base-io-ratio
     decimal18-power(io-ratio-growth-factor decimal18-floor(tranche-space-now))
@@ -62,6 +62,7 @@
   io-ratio-multiplier: uniswap-v3-twap-output-ratio(dai 18 weth 18 twap-duration 0 [uniswap-v3-fee-low]),
   amount io-ratio: call<'calculate-io 2>(
     tranche-space-before
+    block-timestamp()
     last-update-time
     io-ratio-multiplier
   );
@@ -72,6 +73,7 @@
   io-ratio-multiplier: uniswap-v3-twap-output-ratio(weth 18 dai 18 twap-duration 0 [uniswap-v3-fee-low]),
   amount io-ratio: call<'calculate-io 2>(
     tranche-space-before
+    block-timestamp()
     last-update-time
     io-ratio-multiplier
   );
@@ -79,14 +81,21 @@
 #calculate-io-test
   amount io-ratio: call<'calculate-io 2>(
     test-tranche-space-before
+    test-now
     test-last-update-time
     test-io-ratio-multiplier
   );
 
 #handle-io
+  tranche-space-before
+  last-update-time: call<'last-tranche 2>(),
   tranche-space-now
   _
-  tranche-total-size: call<'calculate-tranche 3>(),
+  tranche-total-size: call<'calculate-tranche 3>(
+    tranche-space-before
+    block-timestamp()
+    last-update-time
+  ),
   tranche-space-diff: decimal18-div(
     decimal18-scale18<0>(output-vault-balance-decrease())
     decimal18-scale18<0>(tranche-total-size)
