@@ -237,7 +237,7 @@ contract XBlockStratUtil is Test {
         inputs[5] = "--entrypoints";
         inputs[6] = "calculate-io-buy";
         inputs[7] = "--entrypoints";
-        inputs[8] = "handle-io";
+        inputs[8] = "handle-io-buy";
 
         trancheRefill = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
     }
@@ -252,7 +252,7 @@ contract XBlockStratUtil is Test {
         inputs[5] = "--entrypoints";
         inputs[6] = "calculate-io-sell";
         inputs[7] = "--entrypoints";
-        inputs[8] = "handle-io";
+        inputs[8] = "handle-io-sell";
 
         trancheRefill = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
     }
