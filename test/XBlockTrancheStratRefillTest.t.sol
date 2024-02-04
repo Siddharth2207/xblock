@@ -139,7 +139,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
         uint256 trancheSpacePerSecond = 11574074e14; 
 
-        for(uint256 i = 1; i <= 2 ; i ++){ 
+        for(uint256 i = 1; i <= 2 ; i++){ 
             uint256 trancheSpace =  i * trancheSpacePerSecond;
 
             vm.mockCall(
@@ -158,5 +158,6 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             
             console2.log("%s,%s,%s",trancheSpace,stack[0],stack[1]);  
         }
+        revert(); 
     }
 }
