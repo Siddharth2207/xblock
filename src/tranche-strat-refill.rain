@@ -2,8 +2,8 @@
 #tranche-space-heal-delay 3600
 #base-tranche-size 1000e18
 #tranche-growth-factor 11e17
-#base-io-ratio 123e16
-#io-ratio-growth-factor 110e16
+#base-io-ratio 111e16
+#io-ratio-growth-factor 105e16
 #tranche-space-key 0
 #update-time-key 1
 #dai 0x6B175474E89094C44Da98b954EedeAC495271d0F
@@ -63,11 +63,7 @@
     decimal18-scale18<0>(output-vault-balance-decrease())
     decimal18-scale18<0>(tranche-total-size)
   ),
-  tranche-space-diff-snapped: if(
-    less-than(decimal18-sub(decimal18-ceil(tranche-space-diff) tranche-space-diff) 1e16)
-    decimal18-ceil(tranche-space-diff)
-    tranche-space-diff
-  ),
-  tranche-space-after: decimal18-add(tranche-space-now tranche-space-diff-snapped),
-  :set(hash(order-hash() tranche-space-key) tranche-space-after),
+  tranche-space-after: decimal18-add(tranche-space-now tranche-space-diff),
+  tranche-space-after-snapped: decimal18-snap-to-unit(1e16 tranche-space-after),
+  :set(hash(order-hash() tranche-space-key) tranche-space-after-snapped),
   :set(hash(order-hash() update-time-key) block-timestamp());
