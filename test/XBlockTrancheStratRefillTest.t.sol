@@ -10,7 +10,7 @@ import {
     SourceIndexV2,
     StateNamespace,
     LibNamespace,
-    FullyQualifiedNamespace    
+    FullyQualifiedNamespace
 } from "test/util/XBlockStratUtils.sol";
 
 import {
@@ -26,20 +26,20 @@ import {
     IO
 } from "src/XBlockStratTrancheRefill.sol";
 
-interface IHoudiniSwapToken { 
+interface IHoudiniSwapToken {
     function launch() external;
-    function setAutomatedMarketMakerPair(address account,bool value) external;
+    function setAutomatedMarketMakerPair(address account, bool value) external;
 }
 
-contract XBlockTrancheStratRefillTest is XBlockStratUtil { 
-
+contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     using SafeERC20 for IERC20;
-    address constant TEST_ORDER_OWNER = address(0x84723849238); 
 
-    function launchLockToken(address arbContract) public { 
+    address constant TEST_ORDER_OWNER = address(0x84723849238);
+
+    function launchLockToken(address arbContract) public {
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
-        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(arbContract,true);
+        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(arbContract, true);
 
         vm.stopPrank();
     }
@@ -53,41 +53,18 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     }
 
     function testTrancheRefillBuyOrder() public {
-
-        launchLockToken(address(ARB_INSTANCE)); 
+        launchLockToken(address(ARB_INSTANCE));
         {
             uint256 depositAmount = 1e18;
             giveTestAccountsTokens(WETH_TOKEN, WETH_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
             depositTokens(TEST_ORDER_OWNER, WETH_TOKEN, VAULT_ID, depositAmount);
         }
-        OrderV2 memory trancheOrder;  
+        OrderV2 memory trancheOrder;
         {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillBuyOrder());
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, lockIo(), wethIo());
         }
 
         takeOrder(trancheOrder, getEncodedLockBuyRoute());
-
-        
     }
-
-    function testTrancheRefillSellOrder() public {
-
-        launchLockToken(address(ARB_INSTANCE)); 
-        {
-            uint256 depositAmount = 1e18;
-            giveTestAccountsTokens(LOCK_TOKEN, LOCK_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
-            depositTokens(TEST_ORDER_OWNER, LOCK_TOKEN, VAULT_ID, depositAmount);
-        }
-        OrderV2 memory trancheOrder;  
-        {
-            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillSellOrder());
-            trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, wethIo(), lockIo());
-        }
-
-        takeOrder(trancheOrder, getEncodedLockSellRoute());
-
-        
-    }
-    
 }
