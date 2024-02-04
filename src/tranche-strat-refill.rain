@@ -103,7 +103,7 @@
   tranche-space-after-snapped: decimal18-snap-to-unit(tranche-space-snap-threshold tranche-space-after),
   /* Minimum tranche movement per trade to avoid people dusting the strat to stop it recharging */
   :ensure<0>(greater-than-or-equal-to(
-    decimal18-sub<1>(tranche-space-after tranche-space-before)
+    decimal18-sub<1>(tranche-space-after-snapped tranche-space-now)
     min-tranche-space-diff
   )),
   :set(hash(order-hash() tranche-space-key) tranche-space-after-snapped),
