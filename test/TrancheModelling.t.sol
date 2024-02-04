@@ -47,6 +47,14 @@ contract XBlockModelling is XBlockStratUtil {
         FullyQualifiedNamespace namespace =
             LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
 
+        vm.writeLine(file, string.concat(
+            "Tranche space",
+            ",",
+            "Amount",
+            ",",
+            "Price"
+        ));
+
         for (uint256 i = 0; i < 200; i++) {
         
             uint256 trancheSpace = uint256(1e17*i);
