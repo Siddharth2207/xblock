@@ -86,8 +86,10 @@
   );
 
 #handle-io
+  base-tranche-size:,
   tranche-space-before last-update-time: call<'last-tranche 2>(),
   tranche-space-now _ tranche-total-size: call<'calculate-tranche 3>(
+    base-tranche-size
     tranche-space-before
     block-timestamp()
     last-update-time
@@ -97,6 +99,7 @@
     int-to-decimal18(tranche-total-size)
   ),
   tranche-space-after: decimal18-add(tranche-space-now tranche-space-diff),
+  /* Snap tranche space to the nearest tranche to avoid dust issues at the edges */
   tranche-space-after-snapped: decimal18-snap-to-unit(tranche-space-snap-threshold tranche-space-after),
   /* Minimum tranche movement per trade to avoid people dusting the strat to stop it recharging */
   :ensure<0>(greater-than-or-equal-to(
@@ -105,3 +108,9 @@
   )),
   :set(hash(order-hash() tranche-space-key) tranche-space-after-snapped),
   :set(hash(order-hash() update-time-key) block-timestamp());
+
+#handle-io-sell
+  :call<'handle-io 0>(base-tranche-size-sell);
+
+#handle-io-buy
+  :call<'handle-io 0>(base-tranche-size-buy);
