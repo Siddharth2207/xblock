@@ -40,10 +40,10 @@ contract XBlockModelling is XBlockStratUtil {
 
     function test_trancheModelling() public {
         string memory file = './test/csvs/tranche-space-stack.csv';
+        if (vm.exists(file)) vm.removeFile(file);
 
         FullyQualifiedNamespace namespace =
             LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
-        if (vm.exists(file)) vm.removeFile(file);
 
 
         for (uint256 i = 0; i < 200; i++) {
