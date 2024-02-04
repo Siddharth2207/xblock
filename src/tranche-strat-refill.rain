@@ -29,11 +29,9 @@
  * non linear rate in token space, according to the derived relationship.
  */
 #calculate-tranche
-  tranche-space-before
-  now
-  last-update-time:,
+  tranche-space-before now last-update-time:,
   recharge-duration: int-sub<1>(now int-add(last-update-time tranche-space-heal-delay)),
-  recharge-tranche-space: decimal18-mul(decimal18-scale18<0>(recharge-duration) tranche-space-per-second),
+  recharge-tranche-space: decimal18-mul(int-to-decimal18(recharge-duration) tranche-space-per-second),
   tranche-space-now: decimal18-sub<1>(tranche-space-before recharge-tranche-space),
   tranche-space-available: decimal18-sub(1e18 decimal18-frac(tranche-space-now)),
   tranche-total-size: decimal18-mul(
@@ -42,13 +40,8 @@
   );
 
 #calculate-io
-  tranche-space-before
-  now
-  last-update-time
-  io-ratio-multiplier:,
-  tranche-space-now
-  tranche-space-available
-  tranche-total-size: call<'calculate-tranche 3>(tranche-space-before now last-update-time),
+  tranche-space-before now last-update-time io-ratio-multiplier:,
+  tranche-space-now tranche-space-available tranche-total-size: call<'calculate-tranche 3>(tranche-space-before now last-update-time),
   tranche-io-ratio: decimal18-mul(
     base-io-ratio
     decimal18-power(io-ratio-growth-factor decimal18-floor(tranche-space-now))
@@ -57,8 +50,7 @@
   eth-tranch-io-ratio: decimal18-mul(tranche-io-ratio io-ratio-multiplier);
 
 #calculate-io-sell
-  tranche-space-before
-  last-update-time: call<'last-tranche 2>(),
+  tranche-space-before last-update-time: call<'last-tranche 2>(),
   io-ratio-multiplier: uniswap-v3-twap-output-ratio(dai 18 weth 18 twap-duration 0 [uniswap-v3-fee-low]),
   amount io-ratio: call<'calculate-io 2>(
     tranche-space-before
@@ -68,8 +60,7 @@
   );
 
 #calculate-io-buy
-  tranche-space-before
-  last-update-time: call<'last-tranche 2>(),
+  tranche-space-before last-update-time: call<'last-tranche 2>(),
   io-ratio-multiplier: uniswap-v3-twap-output-ratio(weth 18 dai 18 twap-duration 0 [uniswap-v3-fee-low]),
   amount io-ratio: call<'calculate-io 2>(
     tranche-space-before
@@ -87,18 +78,15 @@
   );
 
 #handle-io
-  tranche-space-before
-  last-update-time: call<'last-tranche 2>(),
-  tranche-space-now
-  _
-  tranche-total-size: call<'calculate-tranche 3>(
+  tranche-space-before last-update-time: call<'last-tranche 2>(),
+  tranche-space-now _ tranche-total-size: call<'calculate-tranche 3>(
     tranche-space-before
     block-timestamp()
     last-update-time
   ),
   tranche-space-diff: decimal18-div(
-    decimal18-scale18<0>(output-vault-balance-decrease())
-    decimal18-scale18<0>(tranche-total-size)
+    int-to-decimal18(output-vault-balance-decrease())
+    int-to-decimal18(tranche-total-size)
   ),
   tranche-space-after: decimal18-add(tranche-space-now tranche-space-diff),
   tranche-space-after-snapped: decimal18-snap-to-unit(1e16 tranche-space-after),
