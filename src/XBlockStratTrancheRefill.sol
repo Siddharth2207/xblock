@@ -35,4 +35,3 @@ IERC20 constant DAI_TOKEN = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 IRouteProcessor constant ROUTE_PROCESSOR = IRouteProcessor(address(0x827179dD56d07A7eeA32e3873493835da2866976));
 
 uint256 constant VAULT_ID = uint256(keccak256("vault"));
-
