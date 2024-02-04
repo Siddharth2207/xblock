@@ -17,34 +17,19 @@
  * The amount and price is derived from where we are in tranche space, and the
  * amount that we move through tranche space per trade is derived from real vault
  * movements.
- * Tranches are healed at a constant rate in tranche space, which maps to a non
- * linear rate in token space, according to the derived relationship.
+ * Tranches are recharged at a constant rate in tranche space, which maps to a
+ * non linear rate in token space, according to the derived relationship.
  */
 #calculate-tranche
   tranche-space-before: get(hash(order-hash() tranche-space-key)),
   last-update-time: get(hash(order-hash() update-time-key)),
-  tranche-space-now: decimal18-sub(
-    tranche-space-before
-    decimal18-min(
-      tranche-space-before
-      decimal18-mul(
-        decimal18-scale18<0>(
-          int-sub(
-            int-max(
-              int-sub(block-timestamp() tranche-space-heal-delay)
-              last-update-time
-            )
-            last-update-time
-          )
-        )
-        tranche-space-per-second
-      )
-    )
+  recharge-duration: int-sub<1>(
+    block-timestamp()
+    int-add(last-update-time tranche-space-heal-delay)
   ),
-  tranche-space-available: decimal18-sub(
-    1e18
-    decimal18-frac(tranche-space-now)
-  ),
+  recharge-tranche-space: decimal18-mul(decimal18-scale18<0>(recharge-duration) tranche-space-per-second),
+  tranche-space-now: decimal18-sub<1>(tranche-space-before recharge-tranche-space),
+  tranche-space-available: decimal18-sub(1e18 decimal18-frac(tranche-space-now)),
   tranche-total-size: decimal18-mul(
     base-tranche-size
     decimal18-power(tranche-growth-factor decimal18-floor(tranche-space-now))
@@ -57,19 +42,10 @@
   tranche-total-size: call<'calculate-tranche 3>(),
   tranche-io-ratio: decimal18-mul(
     base-io-ratio
-    decimal18-power(
-      io-ratio-growth-factor
-      decimal18-floor(tranche-space-now)
-    )
+    decimal18-power(io-ratio-growth-factor decimal18-floor(tranche-space-now))
   ),
-  tranche-available-size: decimal18-mul(
-    tranche-total-size
-    tranche-space-available
-  ),
-  eth-tranch-io-ratio: decimal18-mul(
-    tranche-io-ratio
-    io-ratio-multiplier
-  );
+  tranche-available-size: decimal18-mul(tranche-total-size tranche-space-available),
+  eth-tranch-io-ratio: decimal18-mul(tranche-io-ratio io-ratio-multiplier);
 
 #calculate-io-sell
   usd-eth: uniswap-v3-twap-output-ratio(dai 18 weth 18 twap-duration 0 [uniswap-v3-fee-low]),
@@ -92,9 +68,6 @@
     decimal18-ceil(tranche-space-diff)
     tranche-space-diff
   ),
-  tranche-space-after: decimal18-add(
-    tranche-space-now
-    tranche-space-diff-snapped
-  ),
+  tranche-space-after: decimal18-add(tranche-space-now tranche-space-diff-snapped),
   :set(hash(order-hash() tranche-space-key) tranche-space-after),
   :set(hash(order-hash() update-time-key) block-timestamp());
