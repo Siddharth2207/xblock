@@ -94,9 +94,9 @@ contract TryCatchReproTest is Test {
         address bar = address(new Bar());
         address baz = address(new Baz());
 
-        (bool successFoo, bytes memory returnDataFoo) = foo.call(abi.encodeWithSignature("notImplemented()"));
-        (bool successBar, bytes memory returnDataBar) = bar.call(abi.encodeWithSignature("notImplemented()"));
-        (bool successBaz, bytes memory returnDataBaz) = baz.call(abi.encodeWithSignature("notImplemented()"));
+        (bool successFoo, bytes memory returnDataFoo) = foo.staticcall(abi.encodeWithSignature("notImplemented()"));
+        (bool successBar, bytes memory returnDataBar) = bar.staticcall(abi.encodeWithSignature("notImplemented()"));
+        (bool successBaz, bytes memory returnDataBaz) = baz.staticcall(abi.encodeWithSignature("notImplemented()"));
 
         assertTrue(successFoo, "foo call failed");
         assertTrue(successBar, "bar call failed");
