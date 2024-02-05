@@ -8,32 +8,37 @@ import {
 
 // WhiteList Contract Address
 //
-// source .env && forge script script/LockToken.s.sol:LockAMMPair --sig "run(address, bool)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {contractAddress} {boolValue} --broadcast
+// source .env && forge script script/LockToken.s.sol:LockAMMPair --sig "run(address, bool)" --rpc-url $RPC_URL_ETH {contractAddress} {boolValue} --broadcast
 //
 contract LockAMMPair is Script {
 
     function run(address contractAddress, bool value) external {
 
         // Signer Address needs to be the owner of the LOCK contract.
-        address sender = vm.envAddress("SIGNER_ADDRESS");
+        vm.startBroadcast(vm.envUint("DEPLOYMENT_KEY"));
+
         IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(contractAddress,value);
-        vm.startBroadcast(sender);
+
+        vm.stopBroadcast();
     }
 }
 
 // WhiteList Account Address
 //
-// source .env && forge script script/LockToken.s.sol:LockExcludeFromList --sig "run(address, bool)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {contractAddress} {boolValue} --broadcast
+// source .env && forge script script/LockToken.s.sol:LockExcludeFromList --sig "run(address, bool)" --rpc-url $RPC_URL_ETH {contractAddress} {boolValue} --broadcast
 //
 contract LockExcludeFromList is Script {
 
     function run(address account, bool value) external {
 
+        // Signer Address needs to be the owner of the LOCK contract.
+        vm.startBroadcast(vm.envUint("DEPLOYMENT_KEY")); 
+
         address[] memory accounts = new address[](1);
         accounts[0] = account;
-        // Signer Address needs to be the owner of the LOCK contract.
-        address sender = vm.envAddress("SIGNER_ADDRESS");
+        
         IHoudiniSwapToken(address(LOCK_TOKEN)).excludeFromLimits(accounts,value);
-        vm.startBroadcast(sender);
+        
+        vm.stopBroadcast();
     }
 }
