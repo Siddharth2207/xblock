@@ -106,7 +106,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
             uint256 amount;
             uint256 ratio;
-            
+
             for (uint256 j = 0; j < entries.length; j++) {
                 if (entries[j].topics[0] == keccak256("Context(address,uint256[][])")) {
                     (, uint256[][] memory context) = abi.decode(entries[j].data, (address, uint256[][]));
@@ -115,7 +115,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
                 }
             }
 
-            uint256 time = block.timestamp + 60 * 30; // moving forward 30 minutes
+            uint256 time = block.timestamp + 60 * 4; // moving forward 30 minutes
 
             string memory line = string.concat(
                     uint2str(time),
@@ -188,8 +188,10 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             }
             parts = parseCsvLine(currentLine);
             console2.log("parts :", parts[0]);
+
             uint256 time = vm.parseUint(parts[0]);
             uint256 marketPrice = vm.parseUint(parts[1]);
+
             vm.warp(time);
 
             {
@@ -199,7 +201,20 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
                 console2.log("strat price :", price);
                 console2.log("marketPrice: ", marketPrice);
 
-                if (marketPrice < price) break;
+                if (marketPrice < price) {
+                    string memory line = string.concat(
+                        uint2str(time),
+                        ",",
+                        uint2str(0),
+                        ",",
+                        uint2str(0),
+                        ",",
+                        uint2str(marketPrice)
+                    );
+
+                    vm.writeLine(file, line);
+                    continue;
+                }
             }
 
             vm.recordLogs();
@@ -222,7 +237,9 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
                     ",",
                     uint2str(amount),
                     ",",
-                    uint2str(ratio)
+                    uint2str(ratio * 434631089935807 / 1e18),
+                    ",",
+                    uint2str(marketPrice)
             );
 
             vm.writeLine(file, line);
