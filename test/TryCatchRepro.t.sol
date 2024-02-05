@@ -12,9 +12,14 @@ contract Bar {
     fallback() external {}
 }
 
+contract Baz {
+    function notImplemented() external returns (address) {
+        return address(0x100);
+    }
+}
+
 interface INotImplemented {
     function notImplemented() external returns (address);
-    function notImplementedBytes() external returns (bytes memory);
 }
 
 contract TryCatchReproTest is Test {
@@ -85,11 +90,23 @@ contract TryCatchReproTest is Test {
     }
 
     function testTryCatchNotRevertBytes() external {
+        address foo = address(new Foo());
         address bar = address(new Bar());
+        address baz = address(new Baz());
 
-        try INotImplemented(bar).notImplementedBytes() returns (bytes memory) {
-        } catch {
-        }
+        (bool successFoo, bytes memory returnDataFoo) = foo.call(abi.encodeWithSignature("notImplemented()"));
+        (bool successBar, bytes memory returnDataBar) = bar.call(abi.encodeWithSignature("notImplemented()"));
+        (bool successBaz, bytes memory returnDataBaz) = baz.call(abi.encodeWithSignature("notImplemented()"));
+
+        assertTrue(successFoo, "foo call failed");
+        assertTrue(successBar, "bar call failed");
+        assertTrue(successBaz, "baz call failed");
+
+        assertTrue(returnDataFoo.length == 0, "foo return data length");
+        assertTrue(returnDataBar.length == 0, "bar return data length");
+        // address is 20 bytes
+        assertTrue(returnDataBaz.length == 0x20, "baz return data length");
+        assertTrue(abi.decode(returnDataBaz, (address)) == address(0x100), "baz return data");
     }
 
     function testTryCatchBarClone() external {
