@@ -5,7 +5,7 @@ import "script/util/OrderBookNPE2DeployUtil.sol";
 
 // Add Buy and Sell TrendRefill Strat Order to Orderbook.
 //
-// source .env && forge script script/OrderBookNPE2.s.sol:AddTrendRefillStratOrder --sig "run(address, uint256)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {vaultId} --broadcast
+// source .env && forge script script/OrderBookNPE2.s.sol:AddTrendRefillStratOrder --sig "run(address, uint256)" --rpc-url $RPC_URL_ETH {orderBookAddress} {vaultId} --broadcast
 //
 contract AddTrendRefillStratOrder is OrderBookNPE2DeployUtil {
     IOrderBookV3 orderbook;
@@ -13,9 +13,7 @@ contract AddTrendRefillStratOrder is OrderBookNPE2DeployUtil {
     function run(address orderBookAddress, uint256 vaultId) external {
         orderbook = IOrderBookV3(orderBookAddress);
 
-        address sender = vm.envAddress("SIGNER_ADDRESS");
-
-        vm.startBroadcast(sender);
+        vm.startBroadcast(vm.envUint("DEPLOYMENT_KEY"));
         (OrderConfigV2 memory buyOrder, OrderConfigV2 memory sellOrder) = getBuySellOrders(vaultId);
         orderbook.addOrder(buyOrder);
         orderbook.addOrder(sellOrder);
@@ -25,7 +23,7 @@ contract AddTrendRefillStratOrder is OrderBookNPE2DeployUtil {
 
 // Deposit a token to Orderbook.
 //
-// source .env && forge script script/OrderBookNPE2.s.sol:Deposit --sig "run(address, address, uint256, uint256)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {token} {vaultId} {amount} --broadcast
+// source .env && forge script script/OrderBookNPE2.s.sol:Deposit --sig "run(address, address, uint256, uint256)" --rpc-url $RPC_URL_ETH {orderBookAddress} {token} {vaultId} {amount} --broadcast
 //
 contract Deposit is OrderBookNPE2DeployUtil {
     IOrderBookV3 orderbook;
@@ -33,9 +31,7 @@ contract Deposit is OrderBookNPE2DeployUtil {
     function run(address orderBookAddress, address token, uint256 vaultId, uint256 amount) external {
         orderbook = IOrderBookV3(orderBookAddress);
 
-        address sender = vm.envAddress("SIGNER_ADDRESS");
-
-        vm.startBroadcast(sender);
+        vm.startBroadcast(vm.envUint("DEPLOYMENT_KEY"));
         approveTokensForDeposit(address(orderbook), token, amount);
         orderbook.deposit(token, vaultId, amount);
         vm.stopBroadcast();
@@ -44,7 +40,7 @@ contract Deposit is OrderBookNPE2DeployUtil {
 
 // Withdraw tokens from Orderbook.
 //
-// source .env && forge script script/OrderBookNPE2.s.sol:Withdraw --sig "run(address, address, uint256, uint256)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {token} {vaultId} {amount} --broadcast
+// source .env && forge script script/OrderBookNPE2.s.sol:Withdraw --sig "run(address, address, uint256, uint256)" --rpc-url $RPC_URL_ETH {orderBookAddress} {token} {vaultId} {amount} --broadcast
 //
 contract Withdraw is OrderBookNPE2DeployUtil {
     IOrderBookV3 orderbook;
@@ -52,9 +48,7 @@ contract Withdraw is OrderBookNPE2DeployUtil {
     function run(address orderBookAddress, address token, uint256 vaultId, uint256 amount) external {
         orderbook = IOrderBookV3(orderBookAddress);
 
-        address sender = vm.envAddress("SIGNER_ADDRESS");
-
-        vm.startBroadcast(sender);
+        vm.startBroadcast(vm.envUint("DEPLOYMENT_KEY"));
         orderbook.withdraw(token, vaultId, amount);
         vm.stopBroadcast();
     }
@@ -62,15 +56,13 @@ contract Withdraw is OrderBookNPE2DeployUtil {
 
 // Remove an order from Orderbook
 //
-// source .env && forge script script/OrderBookNPE2.s.sol:RemoveOrder --sig "run(address, string memory)()" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {txHash} --broadcast
+// source .env && forge script script/OrderBookNPE2.s.sol:RemoveOrder --sig "run(address, string memory)()" --rpc-url $RPC_URL_ETH {orderBookAddress} {txHash} --broadcast
 //
 contract RemoveOrder is OrderBookNPE2DeployUtil {
     IOrderBookV3 orderbook;
 
     function run(address orderBookAddress, string memory txHash) external {
         orderbook = IOrderBookV3(orderBookAddress);
-
-        address sender = vm.envAddress("SIGNER_ADDRESS");
 
         string memory rpcUrl = vm.envString("RPC_URL_ETH");
         string memory castCommand = string.concat("cast receipt ", txHash, " -j --rpc-url ", rpcUrl);
@@ -104,7 +96,7 @@ contract RemoveOrder is OrderBookNPE2DeployUtil {
         (,, OrderV2 memory order,) =
             abi.decode(abi.decode(addOrderEventData, (bytes)), (address, IExpressionDeployerV3, OrderV2, bytes32));
 
-        vm.startBroadcast(sender);
+        vm.startBroadcast(vm.envUint("DEPLOYMENT_KEY"));
         orderbook.removeOrder(order);
         vm.stopBroadcast();
     }

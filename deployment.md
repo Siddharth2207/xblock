@@ -32,17 +32,13 @@ RPC_URL_ETH=
 # Etherscan Api Key
 ETHERSCAN_API_KEY=
 
-# Address corresponding to ledger wallet.
-SIGNER_ADDRESS= 
-
-# Derivation path index(required). This is the mnemonic index corresponding to the above address of your ledger wallet.
-# Default set to 0.
-MNEMONIC_INDEX=0
+# 0x prefixed private key for an account.
+DEPLOYMENT_KEY=
 ```
 
 ## Deploy Rain Contracts
 ```sh
-source .env && forge script script/DeployRainContracts.s.sol:DeployRainContracts --legacy --verify --rpc-url $RPC_URL_ETH  --etherscan-api-key ETHERSCAN_API_KEY --sender $SIGNER_ADDRESS --ledger --mnemonic-indexes $MNEMONIC_INDEX --broadcast
+source .env && forge script script/DeployRainContracts.s.sol:DeployRainContracts --legacy --verify --rpc-url $RPC_URL_ETH  --etherscan-api-key ETHERSCAN_API_KEY --broadcast
 ```
 - After the contracts are deployed populate the remaining feilds in .env file
 ```sh
@@ -52,23 +48,52 @@ EXPRESSION_DEPLOYER=
 ORDERBOOK_SUBPARSER=
 UNISWAP_WORDS=
 ```
+## Add Arb Contract and OrderBook to AMM list. 
+- After all the contracts are deployed, the arb instance contract needs to be whitelisted, i.e the owner of the `LOCK` token contract needs to call the `setAutomatedMarketMakerPair(address account, bool value)` with boolean value set to true. Refer [here.](https://etherscan.io/address/0x922D8563631B03C2c4cf817f4d18f6883AbA0109#writeContract)
+- Whitelist OrderBook Contract as well.
+- This can be done by any tooling that the owner has or run the following foundry script. (Note that the `DEPLOYMENT_KEY` in the .env should correspond to contract owner's wallet for this script) : 
+```sh
+source .env && forge script script/LockToken.s.sol:LockAMMPair --sig "run(address, bool)" --rpc-url $RPC_URL_ETH {contractAddress} {boolValue} --broadcast
+```
 
+## Whitelist Order Owner wallet. 
+- Next we need to whitelist the order owner wallet, i.e the wallet that will `addOrder` and `deposit` tokens.
+- Owner to the `LOCK` contract can do this by any tooling by calling the `excludeFromLimits` function or can run the following script (Note that the `DEPLOYMENT_KEY` in the .env should correspond to contract owner's wallet for this script) : 
+```sh
+source .env && forge script script/LockToken.s.sol:LockExcludeFromList --sig "run(address, bool)" --rpc-url $RPC_URL_ETH {account} {boolValue} --broadcast
+```
+
+- **Make Sure all the .env variables are set and then can run the following commands as required**
 ## Add Orders
 ```sh
-source .env && forge script script/OrderBookNPE2.s.sol:AddTrendRefillStratOrder --sig "run(address, uint256)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {vaultId} --broadcast
+source .env && forge script script/OrderBookNPE2.s.sol:AddTrendRefillStratOrder --sig "run(address, uint256)" --rpc-url $RPC_URL_ETH {orderBookAddress} {vaultId} --broadcast
 ```
 
 ## Deposit Tokens 
 ```sh
-source .env && forge script script/OrderBookNPE2.s.sol:Deposit --sig "run(address, address, uint256, uint256)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {token} {vaultId} {amount} --broadcast
+source .env && forge script script/OrderBookNPE2.s.sol:Deposit --sig "run(address, address, uint256, uint256)" --rpc-url $RPC_URL_ETH {orderBookAddress} {token} {vaultId} {amount} --broadcast
 ```
+- Note: Amount is fully denominated token amount
 
 ## Withdraw Tokens
 ```sh
-source .env && forge script script/OrderBookNPE2.s.sol:Withdraw --sig "run(address, address, uint256, uint256)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {token} {vaultId} {amount} --broadcast
+source .env && forge script script/OrderBookNPE2.s.sol:Withdraw --sig "run(address, address, uint256, uint256)" --rpc-url $RPC_URL_ETH {orderBookAddress} {token} {vaultId} {amount} --broadcast
 ```
+- Note: Amount is fully denominated token amount
 
 ## Remove Orders
 ```sh
-source .env && forge script script/OrderBookNPE2.s.sol:RemoveOrder --sig "run(address, string memory)()" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {txHash} --broadcast
+source .env && forge script script/OrderBookNPE2.s.sol:RemoveOrder --sig "run(address, string memory)()" --rpc-url $RPC_URL_ETH {orderBookAddress} {txHash} --broadcast
 ```
+
+## Deploy Subgraph.
+Subgraph needs to be deployed for OrderBook Smart Contract.
+Refer : https://github.com/rainlanguage/rain.orderbook/pull/50
+
+## Update Digital Ocean Bot Instance
+After the Subgraph is deployed. We can update the arb-bot environment variables. Following variables need to be updated : 
+- `ORDERBOOK_ADDRESS` - Address of OrderBook
+- `ARB_ADDRESS` - Arb Instance address
+- `SUBGRAPH` - Subgraph url
+
+Save the changes, bot gets redeployed with updated vars.
