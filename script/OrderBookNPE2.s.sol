@@ -3,11 +3,11 @@ pragma solidity =0.8.19;
 
 import "script/util/OrderBookNPE2DeployUtil.sol";
 
-// Add Buy and Sell Binomial Bounty Strat Order to Orderbook.
+// Add Buy and Sell TrendRefill Strat Order to Orderbook.
 //
-// source .env && forge script script/OrderBookNPE2.s.sol:AddBinomialWBountyStratOrder --sig "run(address, uint256)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {vaultId} --broadcast
+// source .env && forge script script/OrderBookNPE2.s.sol:AddTrendRefillStratOrder --sig "run(address, uint256)" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {vaultId} --broadcast
 //
-contract AddBinomialWBountyStratOrder is OrderBookNPE2DeployUtil {
+contract AddTrendRefillStratOrder is OrderBookNPE2DeployUtil {
     IOrderBookV3 orderbook;
 
     function run(address orderBookAddress, uint256 vaultId) external {
