@@ -1,0 +1,49 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "width": 800,
+  "height": 500,
+  "padding": 5,
+  "autosize": "pad",
+  "data": [{
+    "name": "tranche-space",
+    "format": {
+      "type": "csv",
+      "parse": {
+        "time": "number",
+        "amount": "number",
+        "price": "number"
+      },
+      "header": ["tranche-space", "amount", "price"]
+    },
+    "url": "../csvs/tranche-space.0.csv"
+  }],
+  "scales": [{
+    "name": "x",
+    "type": "linear",
+    "range": "width",
+    "domain": {"data": "tranche-space", "field": "tranche-space"}
+  }, {
+    "name": "y",
+    "type": "log",
+    "range": "height",
+    "domain": {"data": "tranche-space", "field": "price"}
+  }],
+  "axes": [
+    {"orient": "bottom", "scale": "x", "title": "Trance Space"},
+    {"orient": "left", "scale": "y", "title": "Price"}
+  ],
+  "marks": [{
+    "type": "symbol",
+    "from": {"data": "tranche-space"},
+    "encode": {
+      "enter": {
+        "x": {"scale": "x", "field": "tranche-space"},
+        "y": {"scale": "y", "field": "price"},
+        "fill": {"value": "steelblue"},
+        "angle": {"value": 45},
+        "shape": {"value": "cross"},
+        "size": {"value": 5}
+      }
+    }
+  }]
+}

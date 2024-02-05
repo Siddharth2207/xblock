@@ -2,6 +2,7 @@
 pragma solidity =0.8.19;
 
 import {Vm} from "forge-std/Vm.sol";
+import {Script} from "forge-std/Script.sol";
 import {console2, Test} from "forge-std/Test.sol";
 import {
     XBlockStratUtil,
@@ -25,7 +26,7 @@ import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScal
 import "rain.orderbook/lib/rain.interpreter/src/lib/bitwise/LibCtPop.sol";
 import {STACK_TRACER} from "rain.orderbook/lib/rain.interpreter/src/lib/state/LibInterpreterStateNP.sol";
 
-contract TracerLogger {
+contract TracerLogger is Script {
     fallback() external {
         bytes memory data;
         assembly ("memory-safe") {
@@ -34,7 +35,8 @@ contract TracerLogger {
             calldatacopy(add(data, 0x20), 0, calldatasize())
             mstore(0x40, add(data, add(calldatasize(), 0x20)))
         }
-        console2.logBytes(data);
+        // string memory file = string.concat("./test/csvs/tranche-space-traces.", vm.envString("CSV_FILE_SUFFIX"), ".csv");
+        // vm.writeLine(file, string(data));
     }
 }
 
@@ -46,15 +48,16 @@ contract XBlockModelling is XBlockStratUtil {
     uint256 trancheSpaceKey = uint256(keccak256(abi.encodePacked(ORDER_HASH, uint256(0))));
 
     function testChartTrancheSpace(uint256 trancheSpace) external {
+        trancheSpace = bound(trancheSpace, 0, 1000e18);
         string[] memory ffi = new string[](19);
         ffi[0] = "rain";
         ffi[1] = "dotrain";
         ffi[2] = "compose";
         ffi[3] = "-i";
         ffi[4] = "src/tranche-strat-refill.rain";
-        ffi[5] = "--entrypoints";
+        ffi[5] = "--entrypoint";
         ffi[6] = "calculate-io-test";
-        ffi[7] = "--entrypoints";
+        ffi[7] = "--entrypoint";
         ffi[8] = "calculate-io-test";
         ffi[9] = "--bind";
         ffi[10] = string.concat("test-tranche-space-before=", uint2str(trancheSpace));
@@ -68,6 +71,8 @@ contract XBlockModelling is XBlockStratUtil {
         ffi[18] = "test-io-ratio-multiplier=1e18";
 
         bytes memory rainlang = vm.ffi(ffi);
+
+        // console2.log(address(vm));
 
         address tracerLogger = address(new TracerLogger());
         vm.etch(STACK_TRACER, tracerLogger.code);
@@ -85,6 +90,21 @@ contract XBlockModelling is XBlockStratUtil {
             context,
             new uint256[](0)
         );
+        (kvs);
+
+        // E.g.
+        // ```
+        // CSV_FILE_SUFFIX=$(date +%s) forge test -vvv --mt testChartTrancheSpace --offline
+        // ```
+        string memory file = string.concat("./test/csvs/tranche-space.", vm.envString("CSV_FILE_SUFFIX"), ".csv");
+
+        vm.writeLine(file, string.concat(
+            uint2str(trancheSpace),
+            ",",
+            uint2str(stack[1]),
+            ",",
+            uint2str(stack[0])
+        ));
     }
 
     function test_trancheModelling() public {
