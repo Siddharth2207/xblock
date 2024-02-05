@@ -72,3 +72,19 @@ source .env && forge script script/OrderBookNPE2.s.sol:Withdraw --sig "run(addre
 ```sh
 source .env && forge script script/OrderBookNPE2.s.sol:RemoveOrder --sig "run(address, string memory)()" --sender $SIGNER_ADDRESS --rpc-url $RPC_URL_ETH --ledger --mnemonic-indexes $MNEMONIC_INDEX {orderBookAddress} {txHash} --broadcast
 ```
+
+## Whitelist wallet. 
+- After all the contracts are deployed, the arb instance contract needs to be whitelisted, i.e the owner of the `LOCK` token contract needs to call the `setAutomatedMarketMakerPair(address account, bool value)` with boolean value set to true. Refer [here.](https://etherscan.io/address/0x922D8563631B03C2c4cf817f4d18f6883AbA0109#writeContract)
+- Can whitelist OrderBook Contract as well.
+
+## Deploy Subgraph.
+Subgraph needs to be deployed for OrderBook Smart Contract.
+Refer : https://github.com/rainlanguage/rain.orderbook/pull/50
+
+## Update Digital Ocean Bot Instance
+After the Subgraph is deployed. We can update the arb-bot environment variables. Following variables need to be updated : 
+- `ORDERBOOK_ADDRESS` - Address of OrderBook
+- `ARB_ADDRESS` - Arb Instance address
+- `SUBGRAPH` - Subgraph url
+
+Save the changes, bot gets redeployed with updated vars.
