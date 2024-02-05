@@ -30,14 +30,10 @@ import {
     APPROVED_EOA,
     TakeOrderConfigV2,
     TakeOrdersConfigV2,
-    LibTrancheRefillOrders
+    LibTrancheRefillOrders,
+    IHoudiniSwapToken
 } from "src/XBlockStratTrancheRefill.sol";
 import {LibOrder} from "rain.orderbook/src/lib/LibOrder.sol";
-
-interface IHoudiniSwapToken {
-    function launch() external;
-    function setAutomatedMarketMakerPair(address account, bool value) external;
-}
 
 contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     using SafeERC20 for IERC20;
@@ -50,6 +46,12 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
         vm.stopPrank();
     } 
+    
+    function lockExclude(address[] memory accounts, bool value) public {
+        vm.startPrank(LOCK_OWNER);
+        IHoudiniSwapToken(address(LOCK_TOKEN)).excludeFromLimits(accounts, value);
+        vm.stopPrank();
+    }
 
     function setAMMPair(address ammContract) public{
         vm.startPrank(LOCK_OWNER);
@@ -178,20 +180,20 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         OrderV2 memory trancheOrder;
         {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
-                LibTrancheRefillOrders.getTrancheRefillSellOrder(
-                    vm,
-                    address(ORDERBOOK_SUPARSER),
-                    address(UNISWAP_WORDS)
-                )
+        LibTrancheRefillOrders.getTrancheRefillSellOrder(
+        vm,
+        address(ORDERBOOK_SUPARSER),
+        address(UNISWAP_WORDS)
+        )
             );
-            trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, wethIo(), xBlockIo());
+        trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, wethIo(), xBlockIo());
         }
         moveUniswapV3Price(
-            address(WETH_TOKEN),
-            address(LOCK_TOKEN),
-            WETH_TOKEN_HOLDER,
-            10000e18,
-            getEncodedLockBuyRoute()
+        address(WETH_TOKEN),
+        address(LOCK_TOKEN),
+        WETH_TOKEN_HOLDER,
+        10000e18,
+        getEncodedLockBuyRoute()
         );
         takeOrder(trancheOrder, getEncodedLockSellRoute());
     }

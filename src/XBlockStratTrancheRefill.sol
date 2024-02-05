@@ -38,7 +38,16 @@ IERC20 constant DAI_TOKEN = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 /// @dev https://etherscan.io/address/0x827179dD56d07A7eeA32e3873493835da2866976
 IRouteProcessor constant ROUTE_PROCESSOR = IRouteProcessor(address(0x827179dD56d07A7eeA32e3873493835da2866976));
 
-uint256 constant VAULT_ID = uint256(keccak256("vault")); 
+uint256 constant VAULT_ID = uint256(keccak256("vault"));
+
+interface IHoudiniSwapToken {
+    function launch() external;
+    function setAutomatedMarketMakerPair(address account, bool value) external;
+    function excludeFromLimits(
+        address[] calldata accounts,
+        bool value
+    ) external;
+}
 
 library LibTrancheRefillOrders {
 
