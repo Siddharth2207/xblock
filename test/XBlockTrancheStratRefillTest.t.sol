@@ -44,11 +44,9 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
     address constant TEST_ORDER_OWNER = address(0x84723849238);
 
-    function launchLockToken(address arbContract,address orderBook) public {
+    function launchLockToken() public {
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
-        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(arbContract, true);
-        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(orderBook, true);
         vm.stopPrank();
     }
 
@@ -72,7 +70,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             "Price"
         ));
 
-        launchLockToken(address(ARB_INSTANCE),address(ORDERBOOK));
+        launchLockToken();
         
         uint256 maxAmountPerTakeOrder = type(uint256).max;
         {   
@@ -134,7 +132,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     }
 
     function testTrancheRefillBuyOrderHappyFork() public {
-        launchLockToken(address(ARB_INSTANCE),address(ORDERBOOK));
+        launchLockToken();
         {
             uint256 depositAmount = 1e18;
             giveTestAccountsTokens(WETH_TOKEN, WETH_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
@@ -150,7 +148,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     }
 
     function testTrancheRefillSellOrderHappyFork() public {
-        launchLockToken(address(ARB_INSTANCE),address(ORDERBOOK));
+        launchLockToken();
         {
             uint256 depositAmount = 3000e18;
             giveTestAccountsTokens(LOCK_TOKEN, LOCK_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
