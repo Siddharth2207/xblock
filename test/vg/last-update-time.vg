@@ -1,0 +1,48 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "width": 800,
+  "height": 500,
+  "padding": 5,
+  "autosize": "pad",
+  "data": [{
+    "name": "last-update-time",
+    "format": {
+      "type": "csv",
+      "parse": {
+        "time": "number",
+        "amount": "number",
+        "price": "number"
+      }
+    },
+    "url": "../csvs/last-update-time.csv"
+  }],
+  "scales": [{
+    "name": "x",
+    "type": "linear",
+    "range": "width",
+    "domain": {"data": "last-update-time", "field": "time"}
+  }, {
+    "name": "y",
+    "type": "linear",
+    "range": "height",
+    "domain": {"data": "last-update-time", "field": "price"}
+  }],
+  "axes": [
+    {"orient": "bottom", "scale": "x", "title": "Time"},
+    {"orient": "left", "scale": "y", "title": "Price"}
+  ],
+  "marks": [{
+    "type": "symbol",
+    "from": {"data": "last-update-time"},
+    "encode": {
+      "enter": {
+        "x": {"scale": "x", "field": "time"},
+        "y": {"scale": "y", "field": "price"},
+        "fill": {"value": "steelblue"},
+        "angle": {"value": 45},
+        "shape": {"value": "cross"},
+        "size": {"value": 5}
+      }
+    }
+  }]
+}
