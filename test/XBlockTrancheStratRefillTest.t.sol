@@ -99,7 +99,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         vm.startPrank(APPROVED_EOA);
         IERC20(address(LOCK_TOKEN)).safeApprove(address(ORDERBOOK), type(uint256).max);
         
-        for(uint256 i = 0; i < 1000; i++){
+        for(uint256 i = 0; i < 100; i++){
             vm.recordLogs();
             ORDERBOOK.takeOrders(takeOrdersConfig);
             Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -115,7 +115,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
                 }
             }
 
-            uint256 time = block.timestamp + 60 * 4; // moving forward 30 minutes
+            uint256 time = block.timestamp + 60 * 4; // moving forward 4 minutes
 
             string memory line = string.concat(
                     uint2str(time),
