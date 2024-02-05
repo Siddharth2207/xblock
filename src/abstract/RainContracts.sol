@@ -88,10 +88,14 @@ abstract contract RainContracts {
                     (,, ARB_INSTANCE_ADDRESS) = abi.decode(entries[j].data, (address, address, address));
                 }
             }
-            console2.log("ORDERBOOK : ", address(ORDERBOOK));
             console2.log("PARSER : ", address(PARSER));
             console2.log("EXPRESSION_DEPLOYER : ", address(EXPRESSION_DEPLOYER));
+            console2.log("ORDERBOOK : ", address(ORDERBOOK));
             console2.log("ARB_INSTANCE_ADDRESS : ", ARB_INSTANCE_ADDRESS);
+            console2.log("ORDERBOOK_SUPARSER : ", address(ORDERBOOK_SUPARSER));
+            console2.log("UNISWAP_WORDS : ", address(UNISWAP_WORDS));
+
+
 
             ARB_INSTANCE = IOrderBookV3ArbOrderTaker(ARB_INSTANCE_ADDRESS);
         }
