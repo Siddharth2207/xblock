@@ -17,7 +17,8 @@ import {
     LOCK_TOKEN,
     LOCK_TOKEN_HOLDER,
     VAULT_ID,
-    OrderV2
+    OrderV2,
+    LibTrancheRefillOrders
 } from "src/XBlockStratTrancheRefill.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
@@ -51,7 +52,13 @@ contract XBlockModelling is XBlockStratUtil {
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(trancheSpace));
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encode(block.timestamp));
 
-            uint256[] memory stack = eval(getTrancheRefillSellOrder());
+            uint256[] memory stack = eval(
+                LibTrancheRefillOrders.getTrancheRefillSellOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
+            );
 
             string memory line = string.concat(
                     uint2str(trancheSpace),
@@ -90,7 +97,13 @@ contract XBlockModelling is XBlockStratUtil {
             vm.warp(time);
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(uint256(510e16)));
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encode(uint256(1)));
-            uint256[] memory stack = eval(getTrancheRefillSellOrder());
+            uint256[] memory stack = eval(
+                LibTrancheRefillOrders.getTrancheRefillSellOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
+            );
 
             string memory line = string.concat(
                     uint2str(time),
@@ -127,7 +140,13 @@ contract XBlockModelling is XBlockStratUtil {
             uint256 trancheSpace = uint256(1e18*i);
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(trancheSpace));
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encode(block.timestamp));
-            uint256[] memory stack = eval(getTrancheRefillSellOrder());
+            uint256[] memory stack = eval(
+                LibTrancheRefillOrders.getTrancheRefillSellOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
+            );
 
             string memory line = string.concat(
                     uint2str(trancheSpace / 1e18),

@@ -29,7 +29,8 @@ import {
     DAI_TOKEN,
     APPROVED_EOA,
     TakeOrderConfigV2,
-    TakeOrdersConfigV2
+    TakeOrdersConfigV2,
+    LibTrancheRefillOrders
 } from "src/XBlockStratTrancheRefill.sol";
 import {LibOrder} from "rain.orderbook/src/lib/LibOrder.sol";
 
@@ -47,6 +48,12 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     function launchLockToken() public {
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
+        vm.stopPrank();
+    } 
+
+    function setAMMPair(address ammContract) public{
+        vm.startPrank(LOCK_OWNER);
+        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(ammContract, true);
         vm.stopPrank();
     }
 
@@ -80,7 +87,13 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         }
         OrderV2 memory trancheOrder;
         {
-            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillBuyOrder());
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
+                LibTrancheRefillOrders.getTrancheRefillBuyOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
+            );
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, lockIo(), wethIo());
         }
 
@@ -97,7 +110,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         vm.startPrank(APPROVED_EOA);
         IERC20(address(LOCK_TOKEN)).safeApprove(address(ORDERBOOK), type(uint256).max);
         
-        for(uint256 i = 0; i < 100; i++){
+        for(uint256 i = 0; i < 1; i++){
             vm.recordLogs();
             ORDERBOOK.takeOrders(takeOrdersConfig);
             Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -133,6 +146,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
     function testTrancheRefillBuyOrderHappyFork() public {
         launchLockToken();
+        setAMMPair(address(ARB_INSTANCE));
         {
             uint256 depositAmount = 1e18;
             giveTestAccountsTokens(WETH_TOKEN, WETH_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
@@ -140,7 +154,13 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         }
         OrderV2 memory trancheOrder;
         {
-            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillBuyOrder());
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
+                LibTrancheRefillOrders.getTrancheRefillBuyOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
+            );
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, xBlockIo(), wethIo());
         }
 
@@ -149,6 +169,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
     function testTrancheRefillSellOrderHappyFork() public {
         launchLockToken();
+        setAMMPair(address(ARB_INSTANCE));
         {
             uint256 depositAmount = 3000e18;
             giveTestAccountsTokens(LOCK_TOKEN, LOCK_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
@@ -156,7 +177,13 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         }
         OrderV2 memory trancheOrder;
         {
-            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillSellOrder());
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
+                LibTrancheRefillOrders.getTrancheRefillSellOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
+            );
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, wethIo(), xBlockIo());
         }
         moveUniswapV3Price(

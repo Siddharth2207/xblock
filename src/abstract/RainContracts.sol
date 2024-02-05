@@ -43,7 +43,7 @@ abstract contract RainContracts {
     IInterpreterStoreV2 public STORE;
     IExpressionDeployerV3 public EXPRESSION_DEPLOYER;
     IOrderBookV3 public ORDERBOOK;
-    ISubParserV2 public OB_SUPARSER;
+    ISubParserV2 public ORDERBOOK_SUPARSER;
     ISubParserV2 public UNISWAP_WORDS;
     IOrderBookV3ArbOrderTaker public ARB_IMPLEMENTATION;
     IOrderBookV3ArbOrderTaker public ARB_INSTANCE;
@@ -67,7 +67,7 @@ abstract contract RainContracts {
         );
 
         ORDERBOOK = new OrderBook();
-        OB_SUPARSER = new OrderBookSubParser();
+        ORDERBOOK_SUPARSER = new OrderBookSubParser();
         UNISWAP_WORDS = LibDeploy.newUniswapWords(vm);
         ARB_IMPLEMENTATION = new RouteProcessorOrderBookV3ArbOrderTaker();
         address ARB_INSTANCE_ADDRESS;

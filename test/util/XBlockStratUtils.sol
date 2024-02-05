@@ -16,7 +16,8 @@ import {
     SafeERC20,
     IERC20,
     LOCK_TOKEN,
-    WETH_TOKEN} from "src/XBlockStratTrancheRefill.sol";
+    WETH_TOKEN
+} from "src/XBlockStratTrancheRefill.sol";
 import {
     StateNamespace,
     LibNamespace,
@@ -157,93 +158,7 @@ contract XBlockStratUtil is Test, RainContracts {
         vm.stopPrank();
     }
 
-    function getTrancheRefillBuyOrder() internal returns (bytes memory trancheRefill) {
-        string[] memory inputs = new string[](9);
-        inputs[0] = "rain";
-        inputs[1] = "dotrain";
-        inputs[2] = "compose";
-        inputs[3] = "-i";
-        inputs[4] = "./src/tranche-strat-refill.rain";
-        inputs[5] = "--entrypoints";
-        inputs[6] = "calculate-io-buy";
-        inputs[7] = "--entrypoints";
-        inputs[8] = "handle-io-buy";
-
-        trancheRefill = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
-    }
-
-    function getTrancheRefillSellOrder() internal returns (bytes memory trancheRefill) {
-        string[] memory inputs = new string[](9);
-        inputs[0] = "rain";
-        inputs[1] = "dotrain";
-        inputs[2] = "compose";
-        inputs[3] = "-i";
-        inputs[4] = "./src/tranche-strat-refill.rain";
-        inputs[5] = "--entrypoints";
-        inputs[6] = "calculate-io-sell";
-        inputs[7] = "--entrypoints";
-        inputs[8] = "handle-io-sell";
-
-        trancheRefill = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
-    }
-
-    function getObSubparserPrelude() internal view returns (bytes memory) {
-        bytes memory RAINSTRING_OB_SUBPARSER =
-            bytes(string.concat("using-words-from ", address(OB_SUPARSER).toHexString(), " "));
-        return RAINSTRING_OB_SUBPARSER;
-    }
-
-    function getSellOrder() internal returns (bytes memory sellOrder) {
-        string[] memory inputs = new string[](9);
-        inputs[0] = "rain";
-        inputs[1] = "dotrain";
-        inputs[2] = "compose";
-        inputs[3] = "-i";
-        inputs[4] = "./src/TrendStrat.rain";
-        inputs[5] = "--entrypoints";
-        inputs[6] = "sell-order-calculate-io";
-        inputs[7] = "--entrypoints";
-        inputs[8] = "sell-order-handle-io";
-
-        sellOrder = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
-    }
-
-    function getBuyOrder() internal returns (bytes memory buyOrder) {
-        string[] memory inputs = new string[](9);
-        inputs[0] = "rain";
-        inputs[1] = "dotrain";
-        inputs[2] = "compose";
-        inputs[3] = "-i";
-        inputs[4] = "./src/TrendStrat.rain";
-        inputs[5] = "--entrypoints";
-        inputs[6] = "buy-order-calculate-io";
-        inputs[7] = "--entrypoints";
-        inputs[8] = "buy-order-handle-io";
-
-        buyOrder = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
-    }
-
-    function getUdSource() internal returns (bytes memory udSource) {
-        string[] memory inputs = new string[](7);
-        inputs[0] = "rain";
-        inputs[1] = "dotrain";
-        inputs[2] = "compose";
-        inputs[3] = "-i";
-        inputs[4] = "./src/TrendStrat.rain";
-        inputs[5] = "--entrypoints";
-        inputs[6] = "ud";
-
-        udSource = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
-    }
-
-    function getSubparserPrelude() internal view returns (bytes memory) {
-        bytes memory RAINSTRING_OB_SUBPARSER = bytes(
-            string.concat(
-                "using-words-from ", address(OB_SUPARSER).toHexString(), " ", address(UNISWAP_WORDS).toHexString(), " "
-            )
-        );
-        return RAINSTRING_OB_SUBPARSER;
-    }
+    
 
     function getSellOrderContext(uint256 orderHash) internal view returns (uint256[][] memory context) {
         // Sell Order Context
@@ -382,7 +297,7 @@ contract XBlockStratUtil is Test, RainContracts {
 
     }
 
-    function evalDeployedExpression(address expression, bytes32 orderHash) public returns (uint256[] memory) {
+    function evalDeployedExpression(address expression, bytes32 orderHash) public view returns (uint256[] memory) {
         uint256[][] memory context = buildContext(orderHash);
 
         FullyQualifiedNamespace namespace =
