@@ -22,4 +22,5 @@ jobs:
       - run: nix run .#rainix-sol-prelude
       - run: nix run .#i9r-prelude
         working-directory: lib/rain.orderbook/lib/rain.interpreter
+      - run: mkdir -p test/csvs
       - run: nix run .#rainix-sol-test
