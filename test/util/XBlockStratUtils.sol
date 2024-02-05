@@ -51,6 +51,7 @@ import {
     LibNamespace,
     FullyQualifiedNamespace
 } from "rain.orderbook/lib/rain.interpreter/src/lib/ns/LibNamespace.sol";
+import {LibEncodedDispatch} from "rain.orderbook/lib/rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
@@ -73,6 +74,12 @@ contract XBlockStratUtil is Test {
         vm.selectFork(fork);
         vm.rollFork(FORK_BLOCK_NUMBER);
     }
+
+    bytes32 constant ORDER_HASH = 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef;
+    address constant ORDER_OWNER = address(0x19f95a84aa1C48A2c6a7B2d5de164331c86D030C);
+    address constant APPROVED_COUNTERPARTY = address(0x19f95a84aa1C48A2c6a7B2d5de164331c86D030C);
+    address constant INPUT_ADDRESS = address(XBLOCK_TOKEN);
+    address constant OUTPUT_ADDRESS = address(USDT_TOKEN);
 
     IParserV1 public PARSER;
     IInterpreterV2 public INTERPRETER;
@@ -473,6 +480,64 @@ contract XBlockStratUtil is Test {
                 _i /= 10;
             }
             return string(bstr);
+    }
+
+    function eval(bytes memory rainlang) public returns (uint256[] memory) {
+        (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(rainlang);
+        (,,address expression,) = EXPRESSION_DEPLOYER.deployExpression2(bytecode, constants);
+        return evalDeployedExpression(expression, ORDER_HASH);
+
+    }
+
+    function evalDeployedExpression(address expression, bytes32 orderHash) public returns (uint256[] memory) {
+        uint256[][] memory context = buildContext(orderHash);
+
+        FullyQualifiedNamespace namespace =
+            LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
+
+        (uint256[] memory stack,) = IInterpreterV2(INTERPRETER).eval2(
+            IInterpreterStoreV1(address(STORE)),
+            namespace,
+            LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+            context,
+            new uint256[](0)
+        );
+        return stack;
+    }
+    
+
+    function buildContext(bytes32  orderHash) public pure returns (uint256[][] memory) {
+        uint256[][] memory context = new uint256[][](5);
+
+        {
+            uint256[] memory baseContext = new uint256[](2);
+            context[0] = baseContext;
+        }
+        {
+            uint256[] memory callingContext = new uint256[](3);
+            // order hash
+            callingContext[0] = uint256(orderHash);
+            // owner
+            callingContext[1] = uint256(uint160(address(ORDER_OWNER)));
+            // counterparty
+            callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
+            context[1] = callingContext;
+        }
+        {
+            uint256[] memory calculationsContext = new uint256[](0);
+            context[2] = calculationsContext;
+        }
+        {
+            uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+            inputsContext[0] = uint256(uint160(address(INPUT_ADDRESS)));
+            context[3] = inputsContext;
+        }
+        {
+            uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+            outputsContext[0] = uint256(uint160(address(OUTPUT_ADDRESS)));
+            context[4] = outputsContext;
+        }
+        return context;
     }
 }
 

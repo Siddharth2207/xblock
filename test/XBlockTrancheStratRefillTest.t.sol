@@ -31,7 +31,7 @@ import {
     TakeOrderConfigV2,
     TakeOrdersConfigV2
 } from "src/XBlockStratTrancheRefill.sol";
-import {LibEncodedDispatch} from "rain.orderbook/lib/rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
+import {LibOrder} from "rain.orderbook/src/lib/LibOrder.sol";
 
 interface IHoudiniSwapToken {
     function launch() external;
@@ -40,6 +40,7 @@ interface IHoudiniSwapToken {
 
 contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     using SafeERC20 for IERC20;
+    using LibOrder for OrderV2;
 
     address constant TEST_ORDER_OWNER = address(0x84723849238);
 
@@ -102,28 +103,19 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             vm.recordLogs();
             ORDERBOOK.takeOrders(takeOrdersConfig);
             Vm.Log[] memory entries = vm.getRecordedLogs();
+
             uint256 amount;
             uint256 ratio;
-            // uint256 output;
-            // uint256 input;
+            
             for (uint256 j = 0; j < entries.length; j++) {
                 if (entries[j].topics[0] == keccak256("Context(address,uint256[][])")) {
                     (, uint256[][] memory context) = abi.decode(entries[j].data, (address, uint256[][]));
                     amount = context[2][0];
                     ratio = context[2][1];
-                    // input = context[3][4];
-                    // output = context[4][4];
                 }
             }
 
             uint256 time = block.timestamp + 60 * 30; // moving forward 30 minutes
-
-            // if (i > 30) {
-            //     time = time + 60*60*2; // 2 hours
-            // }
-            // if (i > 80) {
-            //     time = time + 60*60+4; // 4 hours
-            // }
 
             string memory line = string.concat(
                     uint2str(time),
@@ -139,5 +131,136 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         }
 
         vm.stopPrank();
+    }
+
+    function test_modelPriceSeries() public {
+        string memory file = './test/csvs/model-price-series.csv';
+        if (vm.exists(file)) vm.removeFile(file);
+
+        vm.writeLine(file, string.concat(
+            "Timestamp",
+            ",",
+            "Amount",
+            ",",
+            "Price",
+            ",",
+            "External price"
+        ));
+
+        launchLockToken(address(ARB_INSTANCE),address(ORDERBOOK));
+        
+        uint256 maxAmountPerTakeOrder = 100e18;
+        {   
+            uint256 depositAmount = type(uint256).max;
+            deal(address(WETH_TOKEN), TEST_ORDER_OWNER, depositAmount);
+            depositTokens(TEST_ORDER_OWNER, WETH_TOKEN, VAULT_ID, depositAmount);
+        }
+        OrderV2 memory trancheOrder;
+        {
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillBuyOrder());
+            trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, lockIo(), wethIo());
+        }
+
+        uint256 inputIOIndex = 0;
+        uint256 outputIOIndex = 0;
+
+        TakeOrdersConfigV2 memory takeOrdersConfig;
+
+        {       
+            TakeOrderConfigV2[] memory innerConfigs = new TakeOrderConfigV2[](1);
+
+            innerConfigs[0] = TakeOrderConfigV2(trancheOrder, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
+            takeOrdersConfig =
+                TakeOrdersConfigV2(0, maxAmountPerTakeOrder, type(uint256).max, innerConfigs, "");
+
+            deal(address(LOCK_TOKEN), APPROVED_EOA, type(uint256).max);
+            vm.startPrank(APPROVED_EOA);
+            IERC20(address(LOCK_TOKEN)).safeApprove(address(ORDERBOOK), type(uint256).max);
+        }
+
+        string memory currentLine;
+        string[] memory parts;
+
+        do {
+            currentLine = vm.readLine('./test/csvs/price-series.csv');
+            if (keccak256(bytes(currentLine)) == keccak256(bytes(""))) {
+                break;
+            }
+            parts = parseCsvLine(currentLine);
+            console2.log("parts :", parts[0]);
+            uint256 time = vm.parseUint(parts[0]);
+            uint256 marketPrice = vm.parseUint(parts[1]);
+            vm.warp(time);
+
+            {
+                uint256[] memory stack = evalDeployedExpression(trancheOrder.evaluable.expression, trancheOrder.hash());
+                uint256 ethusd = 434631089935807;
+                uint256 price = stack[0] * ethusd / 1e18;
+                console2.log("strat price :", price);
+                console2.log("marketPrice: ", marketPrice);
+
+                if (marketPrice < price) break;
+            }
+
+            vm.recordLogs();
+            ORDERBOOK.takeOrders(takeOrdersConfig);
+            Vm.Log[] memory entries = vm.getRecordedLogs();
+            
+            uint256 amount;
+            uint256 ratio;
+
+            for (uint256 j = 0; j < entries.length; j++) {
+                if (entries[j].topics[0] == keccak256("Context(address,uint256[][])")) {
+                    (, uint256[][] memory context) = abi.decode(entries[j].data, (address, uint256[][]));
+                    amount = context[2][0];
+                    ratio = context[2][1];
+                }
+            }
+
+            string memory line = string.concat(
+                    uint2str(time),
+                    ",",
+                    uint2str(amount),
+                    ",",
+                    uint2str(ratio)
+            );
+
+            vm.writeLine(file, line);
+
+        } while (true);
+
+        vm.stopPrank();
+    }
+
+    function parseCsvLine(string memory line) public pure returns (string[] memory) {
+        uint256 length = countCommas(line) + 1;
+        string[] memory parts = new string[](length);
+        bytes memory lineBytes = bytes(line);
+        uint256 partIndex = 0;
+        uint256 start = 0;
+
+        for (uint256 i = 0; i <= lineBytes.length; i++) {
+            if (i == lineBytes.length || lineBytes[i] == ',') {
+                bytes memory part = new bytes(i - start);
+                for (uint256 j = start; j < i; j++) {
+                    part[j - start] = lineBytes[j];
+                }
+                parts[partIndex] = string(part);
+                partIndex++;
+                start = i + 1; // Skip the comma
+            }
+        }
+        return parts;
+    }
+
+    function countCommas(string memory line) private pure returns (uint256) {
+        bytes memory lineBytes = bytes(line);
+        uint256 count = 0;
+        for (uint256 i = 0; i < lineBytes.length; i++) {
+            if (lineBytes[i] == ',') {
+                count++;
+            }
+        }
+        return count;
     }
 }
