@@ -29,8 +29,6 @@ import {IOrderBookV3ArbOrderTaker} from "rain.orderbook/src/interface/unstable/I
 import {ICloneableFactoryV2} from "src/interface/ICloneableFactoryV2.sol";
 import {
     ROUTE_PROCESSOR,
-    XBLOCK_TOKEN,
-    USDT_TOKEN,
     VAULT_ID,
     IOrderBookV3,
     IO,
@@ -41,8 +39,9 @@ import {
     TakeOrdersConfigV2,
     APPROVED_EOA,
     SafeERC20,
-    IERC20
-} from "src/XBlockStrat.sol";
+    IERC20,
+    LOCK_TOKEN,
+    WETH_TOKEN} from "src/XBlockStratTrancheRefill.sol";
 import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
 import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol";
 import {
@@ -50,6 +49,7 @@ import {
     LibNamespace,
     FullyQualifiedNamespace
 } from "rain.orderbook/lib/rain.interpreter/src/lib/ns/LibNamespace.sol";
+import {LibEncodedDispatch} from "rain.orderbook/lib/rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
@@ -64,7 +64,7 @@ contract XBlockStratUtil is Test {
 
     ICloneableFactoryV2 constant CLONE_FACTORY = ICloneableFactoryV2(0x27C062142b9DF4D07191bd2127Def504DC9e9937);
 
-    uint256 constant FORK_BLOCK_NUMBER = 19119822;
+    uint256 constant FORK_BLOCK_NUMBER = 19148722;
     uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
     function selectEthFork() internal {
@@ -72,6 +72,12 @@ contract XBlockStratUtil is Test {
         vm.selectFork(fork);
         vm.rollFork(FORK_BLOCK_NUMBER);
     }
+
+    bytes32 constant ORDER_HASH = 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef;
+    address constant ORDER_OWNER = address(0x19f95a84aa1C48A2c6a7B2d5de164331c86D030C);
+    address constant APPROVED_COUNTERPARTY = address(0x19f95a84aa1C48A2c6a7B2d5de164331c86D030C);
+    address constant INPUT_ADDRESS = address(LOCK_TOKEN);
+    address constant OUTPUT_ADDRESS = address(WETH_TOKEN);
 
     IParserV1 public PARSER;
     IInterpreterV2 public INTERPRETER;
@@ -127,11 +133,11 @@ contract XBlockStratUtil is Test {
     }
 
     function xBlockIo() internal pure returns (IO memory) {
-        return IO(address(XBLOCK_TOKEN), 18, VAULT_ID);
+        return IO(address(LOCK_TOKEN), 18, VAULT_ID);
     }
 
     function usdtIo() internal pure returns (IO memory) {
-        return IO(address(USDT_TOKEN), 6, VAULT_ID);
+        return IO(address(WETH_TOKEN), 6, VAULT_ID);
     }
 
     function getIERC20Balance(address token, address owner) internal view returns (uint256) {
@@ -226,34 +232,34 @@ contract XBlockStratUtil is Test {
         vm.stopPrank();
     }
 
-    function getTrancheSellOrder() internal returns (bytes memory trancheSellOrder) {
+    function getTrancheRefillBuyOrder() internal returns (bytes memory trancheRefill) {
         string[] memory inputs = new string[](9);
         inputs[0] = "rain";
         inputs[1] = "dotrain";
         inputs[2] = "compose";
         inputs[3] = "-i";
-        inputs[4] = "./src/TrancheStrat.rain";
+        inputs[4] = "./src/tranche-strat-refill.rain";
         inputs[5] = "--entrypoints";
-        inputs[6] = "sell-order-calculate-io";
+        inputs[6] = "calculate-io-buy";
         inputs[7] = "--entrypoints";
-        inputs[8] = "sell-order-handle-io";
+        inputs[8] = "handle-io-buy";
 
-        trancheSellOrder = bytes.concat(getObSubparserPrelude(), vm.ffi(inputs));
+        trancheRefill = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
     }
 
-    function getTrancheBuyOrder() internal returns (bytes memory trancheBuyOrder) {
+    function getTrancheRefillSellOrder() internal returns (bytes memory trancheRefill) {
         string[] memory inputs = new string[](9);
         inputs[0] = "rain";
         inputs[1] = "dotrain";
         inputs[2] = "compose";
         inputs[3] = "-i";
-        inputs[4] = "./src/TrancheStrat.rain";
+        inputs[4] = "./src/tranche-strat-refill.rain";
         inputs[5] = "--entrypoints";
-        inputs[6] = "buy-order-calculate-io";
+        inputs[6] = "calculate-io-sell";
         inputs[7] = "--entrypoints";
-        inputs[8] = "buy-order-handle-io";
+        inputs[8] = "handle-io-sell";
 
-        trancheBuyOrder = bytes.concat(getObSubparserPrelude(), vm.ffi(inputs));
+        trancheRefill = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
     }
 
     function getObSubparserPrelude() internal view returns (bytes memory) {
@@ -308,7 +314,7 @@ contract XBlockStratUtil is Test {
     function getSubparserPrelude() internal view returns (bytes memory) {
         bytes memory RAINSTRING_OB_SUBPARSER = bytes(
             string.concat(
-                "using-words-from ", address(OB_SUPARSER).toHexString(), " ", address(UNISWAP_WORDS).toHexString()
+                "using-words-from ", address(OB_SUPARSER).toHexString(), " ", address(UNISWAP_WORDS).toHexString(), " "
             )
         );
         return RAINSTRING_OB_SUBPARSER;
@@ -338,12 +344,12 @@ contract XBlockStratUtil is Test {
             }
             {
                 uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-                inputsContext[0] = uint256(uint160(address(USDT_TOKEN)));
+                inputsContext[0] = uint256(uint160(address(WETH_TOKEN)));
                 context[3] = inputsContext;
             }
             {
                 uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-                outputsContext[0] = uint256(uint160(address(XBLOCK_TOKEN)));
+                outputsContext[0] = uint256(uint160(address(LOCK_TOKEN)));
                 context[4] = outputsContext;
             }
         }
@@ -373,12 +379,12 @@ contract XBlockStratUtil is Test {
             }
             {
                 uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-                inputsContext[0] = uint256(uint160(address(XBLOCK_TOKEN)));
+                inputsContext[0] = uint256(uint160(address(LOCK_TOKEN)));
                 context[3] = inputsContext;
             }
             {
                 uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-                outputsContext[0] = uint256(uint160(address(USDT_TOKEN)));
+                outputsContext[0] = uint256(uint160(address(WETH_TOKEN)));
                 context[4] = outputsContext;
             }
         }
@@ -396,6 +402,24 @@ contract XBlockStratUtil is Test {
         return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
     }
 
+    function getEncodedLockBuyRoute() internal view returns (bytes memory) {
+        bytes memory ROUTE_PRELUDE =
+            hex"02C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc201ffff017D45a2557bECd766A285d07a4701f5c64D716e2f00";
+        return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
+    }
+
+    function getEncodedLockSellRoute() internal view returns (bytes memory) {
+        bytes memory ROUTE_PRELUDE =
+            hex"02922D8563631B03C2c4cf817f4d18f6883AbA010901ffff017D45a2557bECd766A285d07a4701f5c64D716e2f01";
+        return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
+    }
+
+    function getEncodedDaiSellRoute() internal view returns (bytes memory) {
+        bytes memory ROUTE_PRELUDE =
+            hex"026B175474E89094C44Da98b954EedeAC495271d0F01ffff0160594a405d53811d3BC4766596EFD80fd545A27001";
+        return abi.encode(bytes.concat(ROUTE_PRELUDE, abi.encodePacked(address(ARB_INSTANCE))));
+    }
+
     function decodeBits(uint256 operand, uint256 input) internal pure returns (uint256 output) {
         uint256 startBit = operand & 0xFF;
         uint256 length = (operand >> 8) & 0xFF;
@@ -403,4 +427,85 @@ contract XBlockStratUtil is Test {
         uint256 mask = (2 ** length) - 1;
         output = (input >> startBit) & mask;
     }
+
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+            if (_i == 0) {
+                return "0";
+            }
+            uint j = _i;
+            uint len;
+            while (j != 0) {
+                len++;
+                j /= 10;
+            }
+            bytes memory bstr = new bytes(len);
+            uint k = len;
+            while (_i != 0) {
+                k = k-1;
+                uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+                bytes1 b1 = bytes1(temp);
+                bstr[k] = b1;
+                _i /= 10;
+            }
+            return string(bstr);
+    }
+
+    function eval(bytes memory rainlang) public returns (uint256[] memory) {
+        (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(rainlang);
+        (,,address expression,) = EXPRESSION_DEPLOYER.deployExpression2(bytecode, constants);
+        return evalDeployedExpression(expression, ORDER_HASH);
+
+    }
+
+    function evalDeployedExpression(address expression, bytes32 orderHash) public returns (uint256[] memory) {
+        uint256[][] memory context = buildContext(orderHash);
+
+        FullyQualifiedNamespace namespace =
+            LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
+
+        (uint256[] memory stack,) = IInterpreterV2(INTERPRETER).eval2(
+            IInterpreterStoreV1(address(STORE)),
+            namespace,
+            LibEncodedDispatch.encode2(expression, SourceIndexV2.wrap(0), type(uint16).max),
+            context,
+            new uint256[](0)
+        );
+        return stack;
+    }
+
+
+    function buildContext(bytes32  orderHash) public pure returns (uint256[][] memory) {
+        uint256[][] memory context = new uint256[][](5);
+
+        {
+            uint256[] memory baseContext = new uint256[](2);
+            context[0] = baseContext;
+        }
+        {
+            uint256[] memory callingContext = new uint256[](3);
+            // order hash
+            callingContext[0] = uint256(orderHash);
+            // owner
+            callingContext[1] = uint256(uint160(address(ORDER_OWNER)));
+            // counterparty
+            callingContext[2] = uint256(uint160(APPROVED_COUNTERPARTY));
+            context[1] = callingContext;
+        }
+        {
+            uint256[] memory calculationsContext = new uint256[](0);
+            context[2] = calculationsContext;
+        }
+        {
+            uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+            inputsContext[0] = uint256(uint160(address(INPUT_ADDRESS)));
+            context[3] = inputsContext;
+        }
+        {
+            uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
+            outputsContext[0] = uint256(uint160(address(OUTPUT_ADDRESS)));
+            context[4] = outputsContext;
+        }
+        return context;
+    }
 }
+

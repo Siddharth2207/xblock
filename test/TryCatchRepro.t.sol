@@ -81,4 +81,8 @@ contract TryCatchReproTest is Test {
             assertTrue(true);
         }
     }
+
+    function testTryCatchBarClone() external {
+        address bar = address(new Bar());
+    }
 }
