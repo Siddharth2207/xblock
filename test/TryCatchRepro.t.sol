@@ -2,15 +2,19 @@
 pragma solidity =0.8.19;
 
 import {Test} from "forge-std/Test.sol";
+import {Clones} from "openzeppelin-contracts/contracts/proxy/Clones.sol";
 
 contract Foo {
     function notImplemented() external {}
 }
 
-contract Bar {}
+contract Bar {
+    fallback() external {}
+}
 
 interface INotImplemented {
     function notImplemented() external returns (address);
+    function notImplementedBytes() external returns (bytes memory);
 }
 
 contract TryCatchReproTest is Test {
@@ -69,20 +73,34 @@ contract TryCatchReproTest is Test {
         INotImplemented(bar).notImplemented();
     }
 
-    // This won't revert because bar doesn't implement anything that collides
-    // with the function signature, so the try/catch will catch it.
-    function testTryCatchNotRevert() external {
+    // This will revert because `Bar` implements the fallback function, which
+    // will return empty data when `notImplemented` is called, causing the
+    // abi decode to revert, despite the try/catch.
+    function testTryCatchFallbackRevert() external {
         address bar = address(new Bar());
 
         try INotImplemented(bar).notImplemented() returns (address) {
-            // We don't hit this code path.
-            assertTrue(false);
         } catch {
-            assertTrue(true);
+        }
+    }
+
+    function testTryCatchNotRevertBytes() external {
+        address bar = address(new Bar());
+
+        try INotImplemented(bar).notImplementedBytes() returns (bytes memory) {
+        } catch {
         }
     }
 
     function testTryCatchBarClone() external {
         address bar = address(new Bar());
+        address clone = Clones.clone(bar);
+
+        try INotImplemented(clone).notImplemented() returns (address) {
+            // We don't hit this code path.
+            assertTrue(false);
+        } catch {
+            assertTrue(true);
+        }
     }
 }
