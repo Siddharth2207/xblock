@@ -114,3 +114,6 @@
 
 #handle-io-buy
   :call<'handle-io 0>(base-tranche-size-buy);
+
+#handle-io-test
+  :call<'handle-io 0>(test-base-tranche-size);
