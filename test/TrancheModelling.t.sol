@@ -14,16 +14,11 @@ import {
 } from "test/util/XBlockStratUtils.sol";
 import {LibEncodedDispatch} from "rain.orderbook/lib/rain.interpreter/src/lib/caller/LibEncodedDispatch.sol";
 import {
-    XBLOCK_TOKEN,
-    USDT_TOKEN,
-    XBLOCK_TOKEN_HOLDER,
-    USDT_TOKEN_HOLDER,
+    LOCK_TOKEN,
+    LOCK_TOKEN_HOLDER,
     VAULT_ID,
-    OrderV2,
-    TARGET_COOLDOWN_18,
-    TRACKER,
-    SEED
-} from "src/XBlockStrat.sol";
+    OrderV2
+} from "src/XBlockStratTrancheRefill.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalArithmeticOpenZeppelin.sol";
 import "rain.orderbook/lib/rain.math.fixedpoint/src/lib/LibFixedPointDecimalScale.sol";
 import "rain.orderbook/lib/rain.interpreter/src/lib/bitwise/LibCtPop.sol";

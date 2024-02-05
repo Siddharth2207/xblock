@@ -1,4 +1,4 @@
 out
 cache
 .env
-test/csvs
+test/csvs/*

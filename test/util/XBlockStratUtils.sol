@@ -29,8 +29,6 @@ import {IOrderBookV3ArbOrderTaker} from "rain.orderbook/src/interface/unstable/I
 import {ICloneableFactoryV2} from "src/interface/ICloneableFactoryV2.sol";
 import {
     ROUTE_PROCESSOR,
-    XBLOCK_TOKEN,
-    USDT_TOKEN,
     VAULT_ID,
     IOrderBookV3,
     IO,
@@ -41,9 +39,9 @@ import {
     TakeOrdersConfigV2,
     APPROVED_EOA,
     SafeERC20,
-    IERC20
-} from "src/XBlockStrat.sol";
-import {LOCK_TOKEN, WETH_TOKEN} from "src/XBlockStratTrancheRefill.sol";
+    IERC20,
+    LOCK_TOKEN,
+    WETH_TOKEN} from "src/XBlockStratTrancheRefill.sol";
 import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
 import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol";
 import {
@@ -78,8 +76,8 @@ contract XBlockStratUtil is Test {
     bytes32 constant ORDER_HASH = 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef;
     address constant ORDER_OWNER = address(0x19f95a84aa1C48A2c6a7B2d5de164331c86D030C);
     address constant APPROVED_COUNTERPARTY = address(0x19f95a84aa1C48A2c6a7B2d5de164331c86D030C);
-    address constant INPUT_ADDRESS = address(XBLOCK_TOKEN);
-    address constant OUTPUT_ADDRESS = address(USDT_TOKEN);
+    address constant INPUT_ADDRESS = address(LOCK_TOKEN);
+    address constant OUTPUT_ADDRESS = address(WETH_TOKEN);
 
     IParserV1 public PARSER;
     IInterpreterV2 public INTERPRETER;
@@ -135,11 +133,11 @@ contract XBlockStratUtil is Test {
     }
 
     function xBlockIo() internal pure returns (IO memory) {
-        return IO(address(XBLOCK_TOKEN), 18, VAULT_ID);
+        return IO(address(LOCK_TOKEN), 18, VAULT_ID);
     }
 
     function usdtIo() internal pure returns (IO memory) {
-        return IO(address(USDT_TOKEN), 6, VAULT_ID);
+        return IO(address(WETH_TOKEN), 6, VAULT_ID);
     }
 
     function getIERC20Balance(address token, address owner) internal view returns (uint256) {
@@ -264,36 +262,6 @@ contract XBlockStratUtil is Test {
         trancheRefill = bytes.concat(getSubparserPrelude(), vm.ffi(inputs));
     }
 
-    function getTrancheSellOrder() internal returns (bytes memory trancheSellOrder) {
-        string[] memory inputs = new string[](9);
-        inputs[0] = "rain";
-        inputs[1] = "dotrain";
-        inputs[2] = "compose";
-        inputs[3] = "-i";
-        inputs[4] = "./src/TrancheStrat.rain";
-        inputs[5] = "--entrypoints";
-        inputs[6] = "calculate-io-sell";
-        inputs[7] = "--entrypoints";
-        inputs[8] = "handle-io";
-
-        trancheSellOrder = bytes.concat(getObSubparserPrelude(), vm.ffi(inputs));
-    }
-
-    function getTrancheBuyOrder() internal returns (bytes memory trancheBuyOrder) {
-        string[] memory inputs = new string[](9);
-        inputs[0] = "rain";
-        inputs[1] = "dotrain";
-        inputs[2] = "compose";
-        inputs[3] = "-i";
-        inputs[4] = "./src/TrancheStrat.rain";
-        inputs[5] = "--entrypoints";
-        inputs[6] = "buy-order-calculate-io";
-        inputs[7] = "--entrypoints";
-        inputs[8] = "buy-order-handle-io";
-
-        trancheBuyOrder = bytes.concat(getObSubparserPrelude(), vm.ffi(inputs));
-    }
-
     function getObSubparserPrelude() internal view returns (bytes memory) {
         bytes memory RAINSTRING_OB_SUBPARSER =
             bytes(string.concat("using-words-from ", address(OB_SUPARSER).toHexString(), " "));
@@ -376,12 +344,12 @@ contract XBlockStratUtil is Test {
             }
             {
                 uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-                inputsContext[0] = uint256(uint160(address(USDT_TOKEN)));
+                inputsContext[0] = uint256(uint160(address(WETH_TOKEN)));
                 context[3] = inputsContext;
             }
             {
                 uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-                outputsContext[0] = uint256(uint160(address(XBLOCK_TOKEN)));
+                outputsContext[0] = uint256(uint160(address(LOCK_TOKEN)));
                 context[4] = outputsContext;
             }
         }
@@ -411,12 +379,12 @@ contract XBlockStratUtil is Test {
             }
             {
                 uint256[] memory inputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-                inputsContext[0] = uint256(uint160(address(XBLOCK_TOKEN)));
+                inputsContext[0] = uint256(uint160(address(LOCK_TOKEN)));
                 context[3] = inputsContext;
             }
             {
                 uint256[] memory outputsContext = new uint256[](CONTEXT_VAULT_IO_ROWS);
-                outputsContext[0] = uint256(uint160(address(USDT_TOKEN)));
+                outputsContext[0] = uint256(uint160(address(WETH_TOKEN)));
                 context[4] = outputsContext;
             }
         }
