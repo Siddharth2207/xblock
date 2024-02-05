@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: CAL
 pragma solidity =0.8.19;
 
+import {Vm} from "forge-std/Vm.sol";
 import {IRouteProcessor} from "src/interface/IRouteProcessor.sol";
 import {SafeERC20, IERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {
@@ -12,6 +13,7 @@ import {
     TakeOrderConfigV2,
     TakeOrdersConfigV2
 } from "rain.orderbook/src/interface/unstable/IOrderBookV3.sol";
+import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 /// @dev https://etherscan.io/address/0x922D8563631B03C2c4cf817f4d18f6883AbA0109
 IERC20 constant LOCK_TOKEN = IERC20(0x922D8563631B03C2c4cf817f4d18f6883AbA0109);
@@ -36,4 +38,49 @@ IERC20 constant DAI_TOKEN = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 /// @dev https://etherscan.io/address/0x827179dD56d07A7eeA32e3873493835da2866976
 IRouteProcessor constant ROUTE_PROCESSOR = IRouteProcessor(address(0x827179dD56d07A7eeA32e3873493835da2866976));
 
-uint256 constant VAULT_ID = uint256(keccak256("vault"));
+uint256 constant VAULT_ID = uint256(keccak256("vault")); 
+
+library LibTrancheRefillOrders {
+
+    using Strings for address;
+
+    function getTrancheRefillBuyOrder(Vm vm, address orderBookSubparser, address uniswapWords) internal returns (bytes memory trancheRefill) {
+        string[] memory inputs = new string[](9);
+        inputs[0] = "rain";
+        inputs[1] = "dotrain";
+        inputs[2] = "compose";
+        inputs[3] = "-i";
+        inputs[4] = "./src/tranche-strat-refill.rain";
+        inputs[5] = "--entrypoints";
+        inputs[6] = "calculate-io-buy";
+        inputs[7] = "--entrypoints";
+        inputs[8] = "handle-io-buy";
+
+        trancheRefill = bytes.concat(getSubparserPrelude(orderBookSubparser,uniswapWords), vm.ffi(inputs));
+    }
+
+    function getTrancheRefillSellOrder(Vm vm, address orderBookSubparser, address uniswapWords) internal returns (bytes memory trancheRefill) {
+        string[] memory inputs = new string[](9);
+        inputs[0] = "rain";
+        inputs[1] = "dotrain";
+        inputs[2] = "compose";
+        inputs[3] = "-i";
+        inputs[4] = "./src/tranche-strat-refill.rain";
+        inputs[5] = "--entrypoints";
+        inputs[6] = "calculate-io-sell";
+        inputs[7] = "--entrypoints";
+        inputs[8] = "handle-io-sell";
+
+        trancheRefill = bytes.concat(getSubparserPrelude(orderBookSubparser,uniswapWords), vm.ffi(inputs));
+    }
+
+    function getSubparserPrelude(address obSubparser, address uniswapWords) internal pure returns (bytes memory) {
+        bytes memory RAINSTRING_OB_SUBPARSER = bytes(
+            string.concat(
+                "using-words-from ", obSubparser.toHexString(), " ", uniswapWords.toHexString(), " "
+            )
+        );
+        return RAINSTRING_OB_SUBPARSER;
+    }
+
+}

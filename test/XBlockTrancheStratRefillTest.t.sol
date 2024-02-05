@@ -29,7 +29,8 @@ import {
     DAI_TOKEN,
     APPROVED_EOA,
     TakeOrderConfigV2,
-    TakeOrdersConfigV2
+    TakeOrdersConfigV2,
+    LibTrancheRefillOrders
 } from "src/XBlockStratTrancheRefill.sol";
 import {LibOrder} from "rain.orderbook/src/lib/LibOrder.sol";
 
@@ -44,11 +45,15 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
     address constant TEST_ORDER_OWNER = address(0x84723849238);
 
-    function launchLockToken(address arbContract,address orderBook) public {
+    function launchLockToken() public {
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
-        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(arbContract, true);
-        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(orderBook, true);
+        vm.stopPrank();
+    } 
+
+    function setAMMPair(address ammContract) public{
+        vm.startPrank(LOCK_OWNER);
+        IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(ammContract, true);
         vm.stopPrank();
     }
 
@@ -72,7 +77,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             "Price"
         ));
 
-        launchLockToken(address(ARB_INSTANCE),address(ORDERBOOK));
+        launchLockToken();
         
         uint256 maxAmountPerTakeOrder = type(uint256).max;
         {   
@@ -82,7 +87,13 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         }
         OrderV2 memory trancheOrder;
         {
-            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillBuyOrder());
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
+                LibTrancheRefillOrders.getTrancheRefillBuyOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
+            );
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, lockIo(), wethIo());
         }
 
@@ -99,7 +110,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         vm.startPrank(APPROVED_EOA);
         IERC20(address(LOCK_TOKEN)).safeApprove(address(ORDERBOOK), type(uint256).max);
         
-        for(uint256 i = 0; i < 100; i++){
+        for(uint256 i = 0; i < 1; i++){
             vm.recordLogs();
             ORDERBOOK.takeOrders(takeOrdersConfig);
             Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -133,151 +144,55 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         vm.stopPrank();
     }
 
-    // function test_modelPriceSeries() public {
-    //     string memory file = './test/csvs/model-price-series.csv';
-    //     if (vm.exists(file)) vm.removeFile(file);
-
-    //     vm.writeLine(file, string.concat(
-    //         "Timestamp",
-    //         ",",
-    //         "Amount",
-    //         ",",
-    //         "Price",
-    //         ",",
-    //         "External price"
-    //     ));
-
-    //     launchLockToken(address(ARB_INSTANCE),address(ORDERBOOK));
-        
-    //     uint256 maxAmountPerTakeOrder = 100e18;
-    //     {   
-    //         uint256 depositAmount = type(uint256).max;
-    //         deal(address(WETH_TOKEN), TEST_ORDER_OWNER, depositAmount);
-    //         depositTokens(TEST_ORDER_OWNER, WETH_TOKEN, VAULT_ID, depositAmount);
-    //     }
-    //     OrderV2 memory trancheOrder;
-    //     {
-    //         (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(getTrancheRefillBuyOrder());
-    //         trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, lockIo(), wethIo());
-    //     }
-
-    //     uint256 inputIOIndex = 0;
-    //     uint256 outputIOIndex = 0;
-
-    //     TakeOrdersConfigV2 memory takeOrdersConfig;
-
-    //     {       
-    //         TakeOrderConfigV2[] memory innerConfigs = new TakeOrderConfigV2[](1);
-
-    //         innerConfigs[0] = TakeOrderConfigV2(trancheOrder, inputIOIndex, outputIOIndex, new SignedContextV1[](0));
-    //         takeOrdersConfig =
-    //             TakeOrdersConfigV2(0, maxAmountPerTakeOrder, type(uint256).max, innerConfigs, "");
-
-    //         deal(address(LOCK_TOKEN), APPROVED_EOA, type(uint256).max);
-    //         vm.startPrank(APPROVED_EOA);
-    //         IERC20(address(LOCK_TOKEN)).safeApprove(address(ORDERBOOK), type(uint256).max);
-    //     }
-
-    //     string memory currentLine;
-    //     string[] memory parts;
-
-    //     do {
-    //         currentLine = vm.readLine('./test/csvs/price-series.csv');
-    //         if (keccak256(bytes(currentLine)) == keccak256(bytes(""))) {
-    //             break;
-    //         }
-    //         parts = parseCsvLine(currentLine);
-    //         console2.log("parts :", parts[0]);
-
-    //         uint256 time = vm.parseUint(parts[0]);
-    //         uint256 marketPrice = vm.parseUint(parts[1]);
-
-    //         vm.warp(time);
-
-    //         {
-    //             uint256[] memory stack = evalDeployedExpression(trancheOrder.evaluable.expression, trancheOrder.hash());
-    //             uint256 ethusd = 434631089935807;
-    //             uint256 price = stack[0] * ethusd / 1e18;
-    //             console2.log("strat price :", price);
-    //             console2.log("marketPrice: ", marketPrice);
-
-    //             if (marketPrice < price) {
-    //                 string memory line = string.concat(
-    //                     uint2str(time),
-    //                     ",",
-    //                     uint2str(0),
-    //                     ",",
-    //                     uint2str(0),
-    //                     ",",
-    //                     uint2str(marketPrice)
-    //                 );
-
-    //                 vm.writeLine(file, line);
-    //                 continue;
-    //             }
-    //         }
-
-    //         vm.recordLogs();
-    //         ORDERBOOK.takeOrders(takeOrdersConfig);
-    //         Vm.Log[] memory entries = vm.getRecordedLogs();
-            
-    //         uint256 amount;
-    //         uint256 ratio;
-
-    //         for (uint256 j = 0; j < entries.length; j++) {
-    //             if (entries[j].topics[0] == keccak256("Context(address,uint256[][])")) {
-    //                 (, uint256[][] memory context) = abi.decode(entries[j].data, (address, uint256[][]));
-    //                 amount = context[2][0];
-    //                 ratio = context[2][1];
-    //             }
-    //         }
-
-    //         string memory line = string.concat(
-    //                 uint2str(time),
-    //                 ",",
-    //                 uint2str(amount),
-    //                 ",",
-    //                 uint2str(ratio * 434631089935807 / 1e18),
-    //                 ",",
-    //                 uint2str(marketPrice)
-    //         );
-
-    //         vm.writeLine(file, line);
-
-    //     } while (true);
-
-    //     vm.stopPrank();
-    // }
-
-    function parseCsvLine(string memory line) public pure returns (string[] memory) {
-        uint256 length = countCommas(line) + 1;
-        string[] memory parts = new string[](length);
-        bytes memory lineBytes = bytes(line);
-        uint256 partIndex = 0;
-        uint256 start = 0;
-
-        for (uint256 i = 0; i <= lineBytes.length; i++) {
-            if (i == lineBytes.length || lineBytes[i] == ',') {
-                bytes memory part = new bytes(i - start);
-                for (uint256 j = start; j < i; j++) {
-                    part[j - start] = lineBytes[j];
-                }
-                parts[partIndex] = string(part);
-                partIndex++;
-                start = i + 1; // Skip the comma
-            }
+    function testTrancheRefillBuyOrderHappyFork() public {
+        launchLockToken();
+        setAMMPair(address(ARB_INSTANCE));
+        {
+            uint256 depositAmount = 1e18;
+            giveTestAccountsTokens(WETH_TOKEN, WETH_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
+            depositTokens(TEST_ORDER_OWNER, WETH_TOKEN, VAULT_ID, depositAmount);
         }
-        return parts;
+        OrderV2 memory trancheOrder;
+        {
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
+                LibTrancheRefillOrders.getTrancheRefillBuyOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
+            );
+            trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, xBlockIo(), wethIo());
+        }
+
+        takeOrder(trancheOrder, getEncodedLockBuyRoute());
     }
 
-    function countCommas(string memory line) private pure returns (uint256) {
-        bytes memory lineBytes = bytes(line);
-        uint256 count = 0;
-        for (uint256 i = 0; i < lineBytes.length; i++) {
-            if (lineBytes[i] == ',') {
-                count++;
-            }
+    function testTrancheRefillSellOrderHappyFork() public {
+        launchLockToken();
+        setAMMPair(address(ARB_INSTANCE));
+        {
+            uint256 depositAmount = 3000e18;
+            giveTestAccountsTokens(LOCK_TOKEN, LOCK_TOKEN_HOLDER, TEST_ORDER_OWNER, depositAmount);
+            depositTokens(TEST_ORDER_OWNER, LOCK_TOKEN, VAULT_ID, depositAmount);
         }
-        return count;
+        OrderV2 memory trancheOrder;
+        {
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
+                LibTrancheRefillOrders.getTrancheRefillSellOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
+            );
+            trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, wethIo(), xBlockIo());
+        }
+        moveUniswapV3Price(
+            address(WETH_TOKEN),
+            address(LOCK_TOKEN),
+            WETH_TOKEN_HOLDER,
+            10000e18,
+            getEncodedLockBuyRoute()
+        );
+        takeOrder(trancheOrder, getEncodedLockSellRoute());
     }
 }
