@@ -48,7 +48,7 @@ contract XBlockModelling is XBlockStratUtil {
     uint256 trancheSpaceKey = uint256(keccak256(abi.encodePacked(ORDER_HASH, uint256(0))));
 
     function testChartTrancheSpace(uint256 trancheSpace) external {
-        trancheSpace = bound(trancheSpace, 0, 1000e18);
+        trancheSpace = bound(trancheSpace, 0, 5e18);
         string[] memory ffi = new string[](19);
         ffi[0] = "rain";
         ffi[1] = "dotrain";
