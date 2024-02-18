@@ -60,9 +60,9 @@ library LibTrancheRefillOrders {
         inputs[2] = "compose";
         inputs[3] = "-i";
         inputs[4] = "./src/tranche-strat-refill.rain";
-        inputs[5] = "--entrypoints";
+        inputs[5] = "--entrypoint";
         inputs[6] = "calculate-io-buy";
-        inputs[7] = "--entrypoints";
+        inputs[7] = "--entrypoint";
         inputs[8] = "handle-io-buy";
 
         trancheRefill = bytes.concat(getSubparserPrelude(orderBookSubparser,uniswapWords), vm.ffi(inputs));
@@ -75,9 +75,9 @@ library LibTrancheRefillOrders {
         inputs[2] = "compose";
         inputs[3] = "-i";
         inputs[4] = "./src/tranche-strat-refill.rain";
-        inputs[5] = "--entrypoints";
+        inputs[5] = "--entrypoint";
         inputs[6] = "calculate-io-sell";
-        inputs[7] = "--entrypoints";
+        inputs[7] = "--entrypoint";
         inputs[8] = "handle-io-sell";
 
         trancheRefill = bytes.concat(getSubparserPrelude(orderBookSubparser,uniswapWords), vm.ffi(inputs));
