@@ -197,4 +197,51 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         );
         takeOrder(trancheOrder, getEncodedLockSellRoute());
     }
+
+    function testParseTrancheSpace() public {
+        string[] memory ffi = new string[](41);
+        ffi[0] = "rain";
+        ffi[1] = "dotrain";
+        ffi[2] = "compose";
+        ffi[3] = "-i";
+        ffi[4] = "lib/h20.pubstrats/src/tranche-space.rain";
+        ffi[5] = "--entrypoint";
+        ffi[6] = "calculate-io";
+        ffi[7] = "--entrypoint";
+        ffi[8] = "handle-io";
+        ffi[9] = "--bind";
+        ffi[10] = "tranche-space-per-second=1157407400000000000000";
+        ffi[11] = "--bind";
+        ffi[12] = "tranche-space-recharge-delay=300";
+        ffi[13] = "--bind";
+        ffi[14] = "tranche-size-base=3500000000000000000000";
+        ffi[15] = "--bind";
+        ffi[16] = "tranche-size-growth=1100000000000000000";
+        ffi[17] = "--bind";
+        ffi[18] = "io-ratio-base=1110000000000000000";
+        ffi[19] = "--bind";
+        ffi[20] = "io-ratio-growth=1020000000000000000";
+        ffi[21] = "--bind";
+        ffi[22] = "reference-stable=0x6B175474E89094C44Da98b954EedeAC495271d0F";
+        ffi[23] = "--bind";
+        ffi[24] = "reference-stable-decimals=18";
+        ffi[25] = "--bind";
+        ffi[26] = "reference-reserve=0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+        ffi[27] = "--bind";
+        ffi[28] = "reference-reserve-decimals=18";
+        ffi[29] = "--bind";
+        ffi[30] = "twap-duration=1800";
+        ffi[31] = "--bind";
+        ffi[32] = "min-tranche-space-diff=100000000000000000";
+        ffi[33] = "--bind";
+        ffi[34] = "tranche-space-snap-threshold=10000000000000000"; 
+        ffi[35] = "--bind";
+        ffi[36] = "get-last-tranche='get-real-last-tranche";
+        ffi[37] = "--bind";
+        ffi[38] = "set-last-tranche='set-real-last-tranche";
+        ffi[39] = "--bind";
+        ffi[40] = "io-ratio-multiplier='io-ratio-multiplier-sell"; 
+
+        vm.ffi(ffi);
+    } 
 }

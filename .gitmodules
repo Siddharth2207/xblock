@@ -10,3 +10,6 @@
 [submodule "lib/view-quoter-v3"]
 	path = lib/view-quoter-v3
 	url = https://github.com/Uniswap/view-quoter-v3
+[submodule "lib/h20.pubstrats"]
+	path = lib/h20.pubstrats
+	url = https://github.com/h20liquidity/h20.pubstrats.git
