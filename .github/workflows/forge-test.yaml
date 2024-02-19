@@ -18,7 +18,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v4
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
-      - run: nix develop --command uniswap-prelude
+      - run: nix run .#uniswap-prelude
       - run: nix develop --command rainix-sol-prelude
       - run: nix develop --command i9r-prelude
         working-directory: lib/rain.orderbook/lib/rain.interpreter
