@@ -26,7 +26,8 @@ fs_permissions = [
 
 remappings = [
   "rain.interpreter/=lib/rain.orderbook/lib/rain.interpreter/src",
-  "rain.metadata/=lib/rain.orderbook/lib/rain.metadata/src"
+  "rain.metadata/=lib/rain.orderbook/lib/rain.metadata/src",
+  "rain.solmem/=lib/rain.solmem/src"
 ]
 
 
