@@ -92,8 +92,8 @@ contract XBlockModelling is XBlockStratUtil {
         
         ));
 
-        for (uint256 i = 0; i < (48*8); i++) {
-            uint256 time = 30*i;
+        for (uint256 i = 0; i < (48*64); i++) {
+            uint256 time = 60*i;
             vm.warp(time);
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, trancheSpaceKey), abi.encode(uint256(510e16)));
             vm.mockCall(address(STORE), abi.encodeWithSelector(IInterpreterStoreV1.get.selector, namespace, lastUpdateTimeKey), abi.encode(uint256(1)));
@@ -116,7 +116,7 @@ contract XBlockModelling is XBlockStratUtil {
             vm.writeLine(file, line);
 
             for (uint256 i = 1; i < stack.length; i++) {
-                console2.logUint(stack[i]);
+            console2.logUint(stack[i]);
             }
         }
     }
