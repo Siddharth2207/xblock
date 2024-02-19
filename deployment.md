@@ -6,9 +6,6 @@ source .env && forge script script/OrderBookNPE2.s.sol:RemoveOrder --sig "run(ad
 ```sh
 source .env && forge script script/OrderBookNPE2.s.sol:RemoveOrder --sig "run(address, string memory)()" --rpc-url $RPC_URL_ETH 0xf1224A483ad7F1E9aA46A8CE41229F32d7549A74 0xa030c86277f8a311cd569f24a15f314f427450cd8b1fc2224e0b6965b373f7e7 --broadcast
 ```
-```sh
-source .env && forge script script/OrderBookNPE2.s.sol:AddTrendRefillStratOrder --sig "run(address, uint256)" --rpc-url $RPC_URL_ETH 0xf1224A483ad7F1E9aA46A8CE41229F32d7549A74 1 --broadcast
-```
 ## Prerequisite
 - Install [git](https://git-scm.com/downloads)
 - Install [Nix](https://nixos.org/download)
