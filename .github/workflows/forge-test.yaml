@@ -19,8 +19,8 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
       - run: nix run .#uniswap-prelude
-      - run: nix develop --command rainix-sol-prelude
-      - run: nix develop --command i9r-prelude
+      - run: nix run .#rainix-sol-prelude
+      - run: nix run .#command i9r-prelude
         working-directory: lib/rain.orderbook/lib/rain.interpreter
       - run: mkdir -p test/csvs
-      - run: nix develop --command rainix-sol-test
+      - run: nix run .#rainix-sol-test
