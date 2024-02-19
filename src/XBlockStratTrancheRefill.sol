@@ -49,6 +49,28 @@ interface IHoudiniSwapToken {
     ) external;
 }
 
+function uint2str(uint _i) pure returns (string memory _uintAsString) {
+            if (_i == 0) {
+                return "0";
+            }
+            uint j = _i;
+            uint len;
+            while (j != 0) {
+                len++;
+                j /= 10;
+            }
+            bytes memory bstr = new bytes(len);
+            uint k = len;
+            while (_i != 0) {
+                k = k-1;
+                uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+                bytes1 b1 = bytes1(temp);
+                bstr[k] = b1;
+                _i /= 10;
+            }
+            return string(bstr);
+    }
+
 library LibTrancheRefillOrders {
 
     using Strings for address;
@@ -95,7 +117,7 @@ library LibTrancheRefillOrders {
         ffi[37] = "--bind";
         ffi[38] = "set-last-tranche='set-real-last-tranche";
         ffi[39] = "--bind";
-        ffi[40] = "io-ratio-multiplier='io-ratio-multiplier-sell"; 
+        ffi[40] = "io-ratio-multiplier='io-ratio-multiplier-buy"; 
 
         trancheRefill = bytes.concat(getSubparserPrelude(orderBookSubparser,uniswapWords), vm.ffi(ffi));
     }
@@ -142,9 +164,45 @@ library LibTrancheRefillOrders {
         ffi[37] = "--bind";
         ffi[38] = "set-last-tranche='set-real-last-tranche";
         ffi[39] = "--bind";
-        ffi[40] = "io-ratio-multiplier='io-ratio-multiplier-buy";
+        ffi[40] = "io-ratio-multiplier='io-ratio-multiplier-sell";
 
         trancheRefill = bytes.concat(getSubparserPrelude(orderBookSubparser,uniswapWords), vm.ffi(ffi));
+    }
+
+    function getTestCalculateTrancheSource(
+        Vm vm,
+        address orderBookSubparser,
+        address uniswapWords,
+        uint256 testTrancheSpaceBefore,
+        uint256 testLastUpdateTime,
+        uint256 testNow
+    ) internal returns (bytes memory) {
+        string[] memory ffi = new string[](23);
+        ffi[0] = "rain";
+        ffi[1] = "dotrain";
+        ffi[2] = "compose";
+        ffi[3] = "-i";
+        ffi[4] = "lib/h20.pubstrats/src/tranche-space.rain";
+        ffi[5] = "--entrypoint";
+        ffi[6] = "calculate-tranche";
+        ffi[7] = "--bind";
+        ffi[8] = "tranche-space-per-second=115740740000000";
+        ffi[9] = "--bind";
+        ffi[10] = "tranche-space-recharge-delay=300";
+        ffi[11] = "--bind";
+        ffi[12] = string.concat("test-tranche-space-before=",uint2str(testTrancheSpaceBefore));
+        ffi[13] = "--bind";
+        ffi[14] = string.concat("test-last-update-time=",uint2str(testLastUpdateTime));
+        ffi[15] = "--bind";
+        ffi[16] = string.concat("test-now=",uint2str(testNow));
+        ffi[17] = "--bind";
+        ffi[18] = "tranche-size-base=3500000000000000000000";
+        ffi[19] = "--bind";
+        ffi[20] = "tranche-size-growth=1100000000000000000";
+        ffi[21] = "--bind";
+        ffi[22] = "get-last-tranche='get-test-last-tranche";
+
+        return bytes.concat(getSubparserPrelude(orderBookSubparser,uniswapWords), vm.ffi(ffi));
     }
 
     function getSubparserPrelude(address obSubparser, address uniswapWords) internal pure returns (bytes memory) {

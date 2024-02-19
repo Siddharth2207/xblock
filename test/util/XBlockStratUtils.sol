@@ -36,7 +36,7 @@ contract XBlockStratUtil is Test, RainContracts {
     using LibFixedPointDecimalArithmeticOpenZeppelin for uint256;
     using LibFixedPointDecimalScale for uint256;
 
-    uint256 constant FORK_BLOCK_NUMBER = 19148722;
+    uint256 constant FORK_BLOCK_NUMBER = 19260602;
     uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
     function selectEthFork() internal {
