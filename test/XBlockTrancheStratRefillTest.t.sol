@@ -79,7 +79,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             "Price"
         ));
 
-        launchLockToken();
+        // launchLockToken();
         
         uint256 maxAmountPerTakeOrder = type(uint256).max;
         {   
@@ -147,7 +147,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     }
 
     function testTrancheRefillBuyOrderHappyFork() public {
-        launchLockToken();
+        // launchLockToken();
         setAMMPair(address(ARB_INSTANCE));
         {
             uint256 depositAmount = 1e18;
@@ -165,12 +165,18 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             );
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, xBlockIo(), wethIo());
         }
-
+        moveUniswapV3Price(
+            address(LOCK_TOKEN),
+            address(WETH_TOKEN),
+            LOCK_TOKEN_HOLDER,
+            1000000e18,
+            getEncodedLockSellRoute()
+        );
         takeOrder(trancheOrder, getEncodedLockBuyRoute());
     }
 
     function testTrancheRefillSellOrderHappyFork() public {
-        launchLockToken();
+        // launchLockToken();
         setAMMPair(address(ARB_INSTANCE));
         {
             uint256 depositAmount = 3000e18;

@@ -33,7 +33,7 @@ contract UniswapV3Modelling is Test {
     function setUp() public {
         uint256 fork = vm.createFork(vm.envString("RPC_URL_ETH"));
         vm.selectFork(fork);
-        launchLockToken();
+        // launchLockToken();
         quoter = IQuoter(LibDeploy.newQuoter(vm));
     }
 

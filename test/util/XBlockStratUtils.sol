@@ -36,7 +36,7 @@ contract XBlockStratUtil is Test, RainContracts {
     using LibFixedPointDecimalArithmeticOpenZeppelin for uint256;
     using LibFixedPointDecimalScale for uint256;
 
-    uint256 constant FORK_BLOCK_NUMBER = 19148722;
+    uint256 constant FORK_BLOCK_NUMBER = 19267526;
     uint256 constant CONTEXT_VAULT_IO_ROWS = 5;
 
     function selectEthFork() internal {
@@ -55,7 +55,17 @@ contract XBlockStratUtil is Test, RainContracts {
 
     function setUp() public {
         selectEthFork();
-        deployContracts(vm,ETH_CLONE_FACTORY);
+        // deployContracts(vm,ETH_CLONE_FACTORY);
+        PARSER = IParserV1(0x1dD25717D60E64a14D31676d37cEd01e11C12579);
+        INTERPRETER = IInterpreterV2(0x1878AE5312B94c64d26FA51d89eFa103Be246A17);
+        STORE = IInterpreterStoreV2(0xc357C73fF148d68316F5bAE7248B17F5CF981bE9);
+        EXPRESSION_DEPLOYER = IExpressionDeployerV3(0x3e879Ba59434241Daeff05373037bB1cd7Ff1d22);
+        ORDERBOOK = IOrderBookV3(0xf1224A483ad7F1E9aA46A8CE41229F32d7549A74);
+        ORDERBOOK_SUPARSER = ISubParserV2(0x24B1382A59A61b7512Cc8be50873A4C47B64d046);
+        UNISWAP_WORDS = ISubParserV2(0x45DFd7c02DB274A5B64ff0295c546bF07AD238eB);
+        ARB_IMPLEMENTATION = IOrderBookV3ArbOrderTaker(0x16F53FF328748B41b10dc104A97c22E8A94F1059);
+        ARB_INSTANCE = IOrderBookV3ArbOrderTaker(0xC6b96bC30306c3DffbaAebeBa86ca08498832F6d);
+
     }
 
     function xBlockIo() internal pure returns (IO memory) {
