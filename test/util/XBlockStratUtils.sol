@@ -55,7 +55,6 @@ contract XBlockStratUtil is Test, RainContracts {
 
     function setUp() public {
         selectEthFork();
-        // deployContracts(vm,ETH_CLONE_FACTORY);
         PARSER = IParserV1(0x1dD25717D60E64a14D31676d37cEd01e11C12579);
         INTERPRETER = IInterpreterV2(0x1878AE5312B94c64d26FA51d89eFa103Be246A17);
         STORE = IInterpreterStoreV2(0xc357C73fF148d68316F5bAE7248B17F5CF981bE9);

@@ -78,8 +78,6 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             ",",
             "Price"
         ));
-
-        // launchLockToken();
         
         uint256 maxAmountPerTakeOrder = type(uint256).max;
         {   
@@ -147,7 +145,6 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     }
 
     function testTrancheRefillBuyOrderHappyFork() public {
-        // launchLockToken();
         setAMMPair(address(ARB_INSTANCE));
         {
             uint256 depositAmount = 1e18;
@@ -176,7 +173,6 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     }
 
     function testTrancheRefillSellOrderHappyFork() public {
-        // launchLockToken();
         setAMMPair(address(ARB_INSTANCE));
         {
             uint256 depositAmount = 3000e18;
