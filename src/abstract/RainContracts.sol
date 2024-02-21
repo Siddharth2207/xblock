@@ -47,29 +47,54 @@ abstract contract RainContracts {
     ISubParserV2 public UNISWAP_WORDS;
     IOrderBookV3ArbOrderTaker public ARB_IMPLEMENTATION;
     IOrderBookV3ArbOrderTaker public ARB_INSTANCE;
-    ICloneableFactoryV2 public CLONE_FACTORY; 
+    ICloneableFactoryV2 public CLONE_FACTORY;
 
-    function deployContracts(Vm vm, address cloneFactory) public {
-
-        CLONE_FACTORY = ICloneableFactoryV2(cloneFactory);
+    function deployParser() public {
         PARSER = new RainterpreterParserNPE2();
-        STORE = new RainterpreterStoreNPE2();
-        INTERPRETER = new RainterpreterNPE2();
+    }
 
+    function deployStore() public {
+        STORE = new RainterpreterStoreNPE2();
+    }
+
+    function deployInterpreter() public {
+        INTERPRETER = new RainterpreterNPE2();
+    }
+
+    function deployExpressionDeployer(
+        Vm vm,
+        address interpreter,
+        address store,
+        address parser
+    ) public {
         bytes memory constructionMeta = vm.readFileBinary(
             "lib/rain.orderbook/lib/rain.interpreter/meta/RainterpreterExpressionDeployerNPE2.rain.meta"
         );
 
         EXPRESSION_DEPLOYER = new RainterpreterExpressionDeployerNPE2(
             RainterpreterExpressionDeployerNPE2ConstructionConfig(
-                address(INTERPRETER), address(STORE), address(PARSER), constructionMeta
+                address(interpreter), address(store), address(parser), constructionMeta
             )
         );
+    } 
 
+    function deployOrderBook() public {
         ORDERBOOK = new OrderBook();
         ORDERBOOK_SUPARSER = new OrderBookSubParser();
+    }
+
+    function deployOrderBookSubparser() public {
+        ORDERBOOK_SUPARSER = new OrderBookSubParser();
+    }
+
+    function deployUniswapWords(Vm vm) public {
         UNISWAP_WORDS = LibDeploy.newUniswapWords(vm);
+    }
+
+    function deployArbInstance(Vm vm,address cloneFactory) public {
         ARB_IMPLEMENTATION = new RouteProcessorOrderBookV3ArbOrderTaker();
+        CLONE_FACTORY = ICloneableFactoryV2(cloneFactory);
+
         address ARB_INSTANCE_ADDRESS;
         {
             bytes memory ungatedArbExpression = "";
@@ -88,18 +113,7 @@ abstract contract RainContracts {
                     (,, ARB_INSTANCE_ADDRESS) = abi.decode(entries[j].data, (address, address, address));
                 }
             }
-            console2.log("PARSER : ", address(PARSER));
-            console2.log("EXPRESSION_DEPLOYER : ", address(EXPRESSION_DEPLOYER));
-            console2.log("ORDERBOOK : ", address(ORDERBOOK));
-            console2.log("ARB_INSTANCE_ADDRESS : ", ARB_INSTANCE_ADDRESS);
-            console2.log("ORDERBOOK_SUPARSER : ", address(ORDERBOOK_SUPARSER));
-            console2.log("UNISWAP_WORDS : ", address(UNISWAP_WORDS));
-
-
-
             ARB_INSTANCE = IOrderBookV3ArbOrderTaker(ARB_INSTANCE_ADDRESS);
         }
     }
-
-
 }

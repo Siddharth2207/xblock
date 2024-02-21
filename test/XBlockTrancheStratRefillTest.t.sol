@@ -180,10 +180,12 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
             11000000e18,
             getEncodedLockSellRoute()
         ); 
-        for(uint256  i = 0 ; i < 3 ; i++){ 
-            console2.log(i);
+        for(uint256  i = 0 ; i < 3 ; i++){
             takeOrder(trancheOrder, getEncodedLockBuyRoute());
             vm.warp(block.timestamp + TRANCHE_SPACE_RECHARGE_DELAY + 1);
+            vm.expectRevert(bytes("Minimum trade size not met."));
+            takeOrder(trancheOrder, getEncodedLockBuyRoute());
+            vm.warp(block.timestamp + 43200);
         } 
     }
 
@@ -197,25 +199,27 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         OrderV2 memory trancheOrder;
         {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
-        LibTrancheRefillOrders.getTrancheRefillSellOrder(
-        vm,
-        address(ORDERBOOK_SUPARSER),
-        address(UNISWAP_WORDS)
-        )
+                    LibTrancheRefillOrders.getTrancheRefillSellOrder(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS)
+                )
             );
         trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, wethIo(), xBlockIo());
         }
         moveUniswapV3Price(
-        address(WETH_TOKEN),
-        address(LOCK_TOKEN),
-        WETH_TOKEN_HOLDER,
-        10000e18,
-        getEncodedLockBuyRoute()
+            address(WETH_TOKEN),
+            address(LOCK_TOKEN),
+            WETH_TOKEN_HOLDER,
+            10000e18,
+            getEncodedLockBuyRoute()
         );
-        for(uint256  i = 0 ; i < 3 ; i++){ 
-            console2.log(i);
+        for(uint256  i = 0 ; i < 3 ; i++){
             takeOrder(trancheOrder, getEncodedLockSellRoute());
             vm.warp(block.timestamp + TRANCHE_SPACE_RECHARGE_DELAY + 1);
+            vm.expectRevert(bytes("Minimum trade size not met."));
+            takeOrder(trancheOrder, getEncodedLockSellRoute());
+            vm.warp(block.timestamp + 43200);
         } 
     }
 

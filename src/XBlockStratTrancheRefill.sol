@@ -86,7 +86,7 @@ function uint2str(uint _i) pure returns (string memory _uintAsString) {
                 _i /= 10;
             }
             return string(bstr);
-    }
+}
 
 library LibTrancheRefillOrders {
 
@@ -155,7 +155,7 @@ library LibTrancheRefillOrders {
         ffi[11] = "--bind";
         ffi[12] = string.concat("tranche-space-recharge-delay=",uint2str(TRANCHE_SPACE_RECHARGE_DELAY));
         ffi[13] = "--bind";
-        ffi[14] = string.concat("tranche-size-base=",uint2str(TRANCHE_SIZE_BASE_BUY));
+        ffi[14] = string.concat("tranche-size-base=",uint2str(TRANCHE_SIZE_BASE_SELL));
         ffi[15] = "--bind";
         ffi[16] = string.concat("tranche-size-growth=",uint2str(TRANCHE_SIZE_GROWTH));
         ffi[17] = "--bind";
@@ -264,6 +264,66 @@ library LibTrancheRefillOrders {
         ffi[27] = "--bind";
         ffi[28] = "set-last-tranche='set-test-last-tranche";
         return bytes.concat(getSubparserPrelude(orderBookSubparser,uniswapWords), vm.ffi(ffi));
+    }
+
+    function getTestCalculateIoSource(
+        Vm vm,
+        address orderBookSubparser,
+        address uniswapWords,
+        uint256 trancheBaseSize,
+        uint256 testTrancheSpaceBefore,
+        uint256 testLastUpdateTime,
+        uint256 testNow
+    ) internal returns (bytes memory) {
+
+        string[] memory ffi = new string[](45);
+        ffi[0] = "rain";
+        ffi[1] = "dotrain";
+        ffi[2] = "compose";
+        ffi[3] = "-i";
+        ffi[4] = "lib/h20.pubstrats/src/tranche-space.rain";
+        ffi[5] = "--entrypoint";
+        ffi[6] = "calculate-io";
+        ffi[7] = "--bind";
+        ffi[8] = string.concat("tranche-space-per-second=",uint2str(TRANCHE_SPACE_PER_SEC));
+        ffi[9] = "--bind";
+        ffi[10] = string.concat("tranche-space-recharge-delay=",uint2str(TRANCHE_SPACE_RECHARGE_DELAY));
+        ffi[11] = "--bind";
+        ffi[12] = string.concat("test-tranche-space-before=",uint2str(testTrancheSpaceBefore));
+        ffi[13] = "--bind";
+        ffi[14] = string.concat("test-last-update-time=",uint2str(testLastUpdateTime));
+        ffi[15] = "--bind";
+        ffi[16] = string.concat("test-now=",uint2str(testNow));
+        ffi[17] = "--bind";
+        ffi[18] = string.concat("tranche-size-base=",uint2str(trancheBaseSize));
+        ffi[19] = "--bind";
+        ffi[20] = string.concat("tranche-size-growth=",uint2str(TRANCHE_SIZE_GROWTH));
+        ffi[21] = "--bind";
+        ffi[22] = string.concat("tranche-space-snap-threshold=",uint2str(TRANCHE_SPACE_SNAP_THRESHOLD));
+        ffi[23] = "--bind";
+        ffi[24] = string.concat("min-tranche-space-diff=",uint2str(TRANCHE_SPACE_MIN_DIFF));
+        ffi[25] = "--bind";
+        ffi[26] = "get-last-tranche='get-test-last-tranche";
+        ffi[27] = "--bind";
+        ffi[28] = string.concat("io-ratio-base=",uint2str(IO_RATIO_BASE));
+        ffi[29] = "--bind";
+        ffi[30] = string.concat("io-ratio-growth=",uint2str(IO_RATIO_GROWTH));
+        ffi[31] = "--bind";
+        ffi[32] = "io-ratio-multiplier='io-ratio-multiplier-sell";
+        ffi[33] = "--bind";
+        ffi[34] = "reference-stable=0x6B175474E89094C44Da98b954EedeAC495271d0F";
+        ffi[35] = "--bind";
+        ffi[36] = "reference-stable-decimals=18";
+        ffi[37] = "--bind";
+        ffi[38] = "reference-reserve=0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+        ffi[39] = "--bind";
+        ffi[40] = "reference-reserve-decimals=18";
+        ffi[41] = "--bind";
+        ffi[42] = string.concat("twap-duration=",uint2str(TWAP_DURATION));
+        ffi[43] = "--bind";
+        ffi[44] = string.concat("twap-fee=",uint2str(TWAP_FEE));
+        return bytes.concat(getSubparserPrelude(orderBookSubparser,uniswapWords), vm.ffi(ffi));
+
     }
 
     function getSubparserPrelude(address obSubparser, address uniswapWords) internal pure returns (bytes memory) {

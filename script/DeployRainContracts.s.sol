@@ -10,9 +10,18 @@ contract DeployRainContracts is RainContracts, Script {
     address constant ETH_CLONE_FACTORY = 0x27C062142b9DF4D07191bd2127Def504DC9e9937;
     function run() external {
         vm.startBroadcast(vm.envUint("DEPLOYMENT_KEY"));
+        deployParser();
+        deployStore();
+        deployInterpreter(); 
 
-        // Deploy All Contracts
-        deployContracts(vm,ETH_CLONE_FACTORY);
+        deployExpressionDeployer(
+            vm,
+            address(INTERPRETER),
+            address(STORE),
+            address(PARSER)
+        );
+        deployOrderBookSubparser();
+        deployUniswapWords(vm);
 
         vm.stopBroadcast();
     }
