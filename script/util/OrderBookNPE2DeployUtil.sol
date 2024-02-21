@@ -2,12 +2,7 @@
 pragma solidity =0.8.19;
 
 import {Script} from "forge-std/Script.sol";
-import {
-    IExpressionDeployerV3,
-    IParserV1,
-    IOrderBookV3,
-    EvaluableConfigV3
-} from "src/abstract/RainContracts.sol";
+import {IExpressionDeployerV3, IParserV1, IOrderBookV3, EvaluableConfigV3} from "src/abstract/RainContracts.sol";
 import {
     LOCK_TOKEN,
     WETH_TOKEN,
@@ -32,13 +27,12 @@ contract OrderBookNPE2DeployUtil is Script {
     function getBuySellOrders(uint256 vaultId)
         public
         returns (OrderConfigV2 memory buyOrder, OrderConfigV2 memory sellOrder)
-    {   
-
+    {
         IParserV1 PARSER = IParserV1(vm.envAddress("PARSER"));
         IExpressionDeployerV3 EXPRESSION_DEPLOYER = IExpressionDeployerV3(vm.envAddress("EXPRESSION_DEPLOYER"));
         address ORDERBOOK_SUPARSER = vm.envAddress("ORDERBOOK_SUBPARSER");
         address UNISWAP_WORDS = vm.envAddress("UNISWAP_WORDS");
-        
+
         IO[] memory inputs = new IO[](1);
         inputs[0] = IO(address(LOCK_TOKEN), 18, vaultId);
 
@@ -46,11 +40,7 @@ contract OrderBookNPE2DeployUtil is Script {
         outputs[0] = IO(address(WETH_TOKEN), 18, vaultId);
         {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
-                LibTrancheRefillOrders.getTrancheRefillBuyOrder(
-                    vm,
-                    address(ORDERBOOK_SUPARSER),
-                    address(UNISWAP_WORDS)
-                )
+                LibTrancheRefillOrders.getTrancheRefillBuyOrder(vm, address(ORDERBOOK_SUPARSER), address(UNISWAP_WORDS))
             );
             EvaluableConfigV3 memory evaluableConfig = EvaluableConfigV3(EXPRESSION_DEPLOYER, bytecode, constants);
             buyOrder = OrderConfigV2(inputs, outputs, evaluableConfig, "");
@@ -58,9 +48,7 @@ contract OrderBookNPE2DeployUtil is Script {
         {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
                 LibTrancheRefillOrders.getTrancheRefillSellOrder(
-                    vm,
-                    address(ORDERBOOK_SUPARSER),
-                    address(UNISWAP_WORDS)
+                    vm, address(ORDERBOOK_SUPARSER), address(UNISWAP_WORDS)
                 )
             );
             EvaluableConfigV3 memory evaluableConfig = EvaluableConfigV3(EXPRESSION_DEPLOYER, bytecode, constants);

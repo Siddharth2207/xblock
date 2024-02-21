@@ -3,7 +3,7 @@ pragma solidity =0.8.19;
 
 import {Vm} from "forge-std/Vm.sol";
 import {console2, Test} from "forge-std/Test.sol";
-import { StdCheats } from "forge-std/StdCheats.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
 import {
     XBlockStratUtil,
     IInterpreterV2,
@@ -56,15 +56,15 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
         vm.stopPrank();
-    } 
-    
+    }
+
     function lockExclude(address[] memory accounts, bool value) public {
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).excludeFromLimits(accounts, value);
         vm.stopPrank();
     }
 
-    function setAMMPair(address ammContract) public{
+    function setAMMPair(address ammContract) public {
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(ammContract, true);
         vm.stopPrank();
@@ -79,19 +79,13 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
     }
 
     function testTrancheRefillTakeBuyOrder() public {
-        string memory file = './test/csvs/tranche-amount-io.csv';
+        string memory file = "./test/csvs/tranche-amount-io.csv";
         if (vm.exists(file)) vm.removeFile(file);
 
-        vm.writeLine(file, string.concat(
-            "Timestamp",
-            ",",
-            "Amount",
-            ",",
-            "Price"
-        ));
-        
+        vm.writeLine(file, string.concat("Timestamp", ",", "Amount", ",", "Price"));
+
         uint256 maxAmountPerTakeOrder = type(uint256).max;
-        {   
+        {
             uint256 depositAmount = type(uint256).max;
             deal(address(WETH_TOKEN), TEST_ORDER_OWNER, depositAmount);
             depositTokens(TEST_ORDER_OWNER, WETH_TOKEN, VAULT_ID, depositAmount);
@@ -99,11 +93,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         OrderV2 memory trancheOrder;
         {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
-                LibTrancheRefillOrders.getTrancheRefillBuyOrder(
-                    vm,
-                    address(ORDERBOOK_SUPARSER),
-                    address(UNISWAP_WORDS)
-                )
+                LibTrancheRefillOrders.getTrancheRefillBuyOrder(vm, address(ORDERBOOK_SUPARSER), address(UNISWAP_WORDS))
             );
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, lockIo(), wethIo());
         }
@@ -120,8 +110,8 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         deal(address(LOCK_TOKEN), APPROVED_EOA, type(uint256).max);
         vm.startPrank(APPROVED_EOA);
         IERC20(address(LOCK_TOKEN)).safeApprove(address(ORDERBOOK), type(uint256).max);
-        
-        for(uint256 i = 0; i < 1; i++){
+
+        for (uint256 i = 0; i < 1; i++) {
             vm.recordLogs();
             ORDERBOOK.takeOrders(takeOrdersConfig);
             Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -139,13 +129,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
 
             uint256 time = block.timestamp + 60 * 4; // moving forward 4 minutes
 
-            string memory line = string.concat(
-                    uint2str(time),
-                    ",",
-                    uint2str(amount),
-                    ",",
-                    uint2str(ratio)
-            );
+            string memory line = string.concat(uint2str(time), ",", uint2str(amount), ",", uint2str(ratio));
 
             vm.writeLine(file, line);
 
@@ -165,28 +149,20 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         OrderV2 memory trancheOrder;
         {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
-                LibTrancheRefillOrders.getTrancheRefillBuyOrder(
-                    vm,
-                    address(ORDERBOOK_SUPARSER),
-                    address(UNISWAP_WORDS)
-                )
+                LibTrancheRefillOrders.getTrancheRefillBuyOrder(vm, address(ORDERBOOK_SUPARSER), address(UNISWAP_WORDS))
             );
             trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, xBlockIo(), wethIo());
         }
         moveUniswapV3Price(
-            address(LOCK_TOKEN),
-            address(WETH_TOKEN),
-            LOCK_TOKEN_HOLDER,
-            11000000e18,
-            getEncodedLockSellRoute()
-        ); 
-        for(uint256  i = 0 ; i < 3 ; i++){
+            address(LOCK_TOKEN), address(WETH_TOKEN), LOCK_TOKEN_HOLDER, 11000000e18, getEncodedLockSellRoute()
+        );
+        for (uint256 i = 0; i < 3; i++) {
             takeOrder(trancheOrder, getEncodedLockBuyRoute());
             vm.warp(block.timestamp + TRANCHE_SPACE_RECHARGE_DELAY + 1);
             vm.expectRevert(bytes("Minimum trade size not met."));
             takeOrder(trancheOrder, getEncodedLockBuyRoute());
             vm.warp(block.timestamp + 43200);
-        } 
+        }
     }
 
     function testTrancheRefillSellOrderHappyFork() public {
@@ -199,37 +175,81 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
         OrderV2 memory trancheOrder;
         {
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
-                    LibTrancheRefillOrders.getTrancheRefillSellOrder(
-                    vm,
-                    address(ORDERBOOK_SUPARSER),
-                    address(UNISWAP_WORDS)
+                LibTrancheRefillOrders.getTrancheRefillSellOrder(
+                    vm, address(ORDERBOOK_SUPARSER), address(UNISWAP_WORDS)
                 )
             );
-        trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, wethIo(), xBlockIo());
+            trancheOrder = placeOrder(TEST_ORDER_OWNER, bytecode, constants, wethIo(), xBlockIo());
         }
         moveUniswapV3Price(
-            address(WETH_TOKEN),
-            address(LOCK_TOKEN),
-            WETH_TOKEN_HOLDER,
-            10000e18,
-            getEncodedLockBuyRoute()
+            address(WETH_TOKEN), address(LOCK_TOKEN), WETH_TOKEN_HOLDER, 10000e18, getEncodedLockBuyRoute()
         );
-        for(uint256  i = 0 ; i < 3 ; i++){
+        for (uint256 i = 0; i < 3; i++) {
             takeOrder(trancheOrder, getEncodedLockSellRoute());
             vm.warp(block.timestamp + TRANCHE_SPACE_RECHARGE_DELAY + 1);
             vm.expectRevert(bytes("Minimum trade size not met."));
             takeOrder(trancheOrder, getEncodedLockSellRoute());
             vm.warp(block.timestamp + 43200);
-        } 
+        }
     }
 
     function testSellCalculateTranche(uint256 trancheSpaceBefore, uint256 delay) public {
-        trancheSpaceBefore = bound(trancheSpaceBefore,0,100e18);
-        delay = bound(delay, 1,86400);
+        trancheSpaceBefore = bound(trancheSpaceBefore, 0, 100e18);
+        delay = bound(delay, 1, 86400);
         uint256 lastTimeUpdate = block.timestamp;
 
         uint256[] memory stack1 = eval(
             LibTrancheRefillOrders.getTestCalculateTrancheSource(
+                vm,
+                address(ORDERBOOK_SUPARSER),
+                address(UNISWAP_WORDS),
+                TRANCHE_SIZE_BASE_SELL,
+                trancheSpaceBefore,
+                lastTimeUpdate,
+                lastTimeUpdate + delay
+            )
+        );
+
+        assertEq(stack1[2], SaturatingMath.saturatingSub(trancheSpaceBefore, stack1[4]));
+        assertEq(stack1[3], lastTimeUpdate + delay);
+    }
+
+    function testBuyCalculateTranche(uint256 trancheSpaceBefore, uint256 delay) public {
+        trancheSpaceBefore = bound(trancheSpaceBefore, 0, 100e18);
+        delay = bound(delay, 1, 86400);
+        uint256 lastTimeUpdate = block.timestamp;
+
+        uint256[] memory stack1 = eval(
+            LibTrancheRefillOrders.getTestCalculateTrancheSource(
+                vm,
+                address(ORDERBOOK_SUPARSER),
+                address(UNISWAP_WORDS),
+                TRANCHE_SIZE_BASE_BUY,
+                trancheSpaceBefore,
+                lastTimeUpdate,
+                lastTimeUpdate + delay
+            )
+        );
+
+        assertEq(stack1[2], SaturatingMath.saturatingSub(trancheSpaceBefore, stack1[4]));
+        assertEq(stack1[3], lastTimeUpdate + delay);
+    }
+
+    function testSellHandleIo(uint256 outputTokenTraded, uint256 trancheSpaceBefore, uint256 delay) public {
+        outputTokenTraded = bound(outputTokenTraded, 1e18, 1000000e18);
+        trancheSpaceBefore = bound(trancheSpaceBefore, 0, 100e18);
+        delay = bound(delay, 1, 86400);
+        uint256 lastTimeUpdate = block.timestamp;
+
+        FullyQualifiedNamespace namespace =
+            LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
+
+        uint256[][] memory buyOrderContext = getBuyOrderContext(12345);
+        buyOrderContext[4][1] = 18;
+
+        {
+            uint256[] memory calculateTrancheStack = eval(
+                LibTrancheRefillOrders.getTestCalculateTrancheSource(
                     vm,
                     address(ORDERBOOK_SUPARSER),
                     address(UNISWAP_WORDS),
@@ -237,26 +257,55 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
                     trancheSpaceBefore,
                     lastTimeUpdate,
                     lastTimeUpdate + delay
-            )
-        ); 
+                )
+            );
 
-        assertEq(
-            stack1[2],
-            SaturatingMath.saturatingSub(trancheSpaceBefore,stack1[4])
-        );
-        assertEq(
-            stack1[3],
-            lastTimeUpdate + delay
-        );
+            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
+                LibTrancheRefillOrders.getTestHandleIoSource(
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS),
+                    TRANCHE_SIZE_BASE_SELL,
+                    trancheSpaceBefore,
+                    lastTimeUpdate,
+                    lastTimeUpdate + delay
+                )
+            );
+            (,, address handleIoExpression,) = EXPRESSION_DEPLOYER.deployExpression2(bytecode, constants);
+
+            buyOrderContext[4][4] = outputTokenTraded;
+            uint256 trancheSpaceAfter =
+                trancheSpaceBefore + outputTokenTraded.fixedPointDiv(calculateTrancheStack[0], Math.Rounding.Down);
+
+            if (trancheSpaceAfter < (trancheSpaceBefore + TRANCHE_SPACE_MIN_DIFF)) {
+                vm.expectRevert(bytes("Minimum trade size not met."));
+            }
+
+            IInterpreterV2(INTERPRETER).eval2(
+                IInterpreterStoreV1(address(STORE)),
+                namespace,
+                LibEncodedDispatch.encode2(handleIoExpression, SourceIndexV2.wrap(0), type(uint16).max),
+                buyOrderContext,
+                new uint256[](0)
+            );
+        }
     }
 
-    function testBuyCalculateTranche(uint256 trancheSpaceBefore, uint256 delay) public {
-        trancheSpaceBefore = bound(trancheSpaceBefore,0,100e18);
-        delay = bound(delay, 1,86400);
+    function testBuyHandleIo(uint256 outputTokenTraded, uint256 trancheSpaceBefore, uint256 delay) public {
+        outputTokenTraded = bound(outputTokenTraded, 1e10, 1000e18);
+        trancheSpaceBefore = bound(trancheSpaceBefore, 0, 100e18);
+        delay = bound(delay, 1, 86400);
         uint256 lastTimeUpdate = block.timestamp;
 
-        uint256[] memory stack1 = eval(
-            LibTrancheRefillOrders.getTestCalculateTrancheSource(
+        FullyQualifiedNamespace namespace =
+            LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
+
+        uint256[][] memory buyOrderContext = getBuyOrderContext(12345);
+        buyOrderContext[4][1] = 18;
+
+        {
+            uint256[] memory calculateTrancheStack = eval(
+                LibTrancheRefillOrders.getTestCalculateTrancheSource(
                     vm,
                     address(ORDERBOOK_SUPARSER),
                     address(UNISWAP_WORDS),
@@ -264,66 +313,29 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
                     trancheSpaceBefore,
                     lastTimeUpdate,
                     lastTimeUpdate + delay
-            )
-        ); 
-
-        assertEq(
-            stack1[2],
-            SaturatingMath.saturatingSub(trancheSpaceBefore,stack1[4])
-        );
-        assertEq(
-            stack1[3],
-            lastTimeUpdate + delay
-        );
-    } 
-
-    function testSellHandleIo(
-        uint256 outputTokenTraded,
-        uint256 trancheSpaceBefore,
-        uint256 delay
-    ) public { 
-        outputTokenTraded = bound(outputTokenTraded,1e18,1000000e18);
-        trancheSpaceBefore = bound(trancheSpaceBefore,0,100e18);
-        delay = bound(delay, 1,86400);
-        uint256 lastTimeUpdate = block.timestamp;
-
-        FullyQualifiedNamespace namespace =
-                LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
-
-        uint256[][] memory buyOrderContext = getBuyOrderContext(12345); 
-        buyOrderContext[4][1] = 18; 
-
-        {
-            uint256[] memory calculateTrancheStack = eval(
-            LibTrancheRefillOrders.getTestCalculateTrancheSource(
-                        vm,
-                        address(ORDERBOOK_SUPARSER),
-                        address(UNISWAP_WORDS),
-                        TRANCHE_SIZE_BASE_SELL,
-                        trancheSpaceBefore,
-                        lastTimeUpdate,
-                        lastTimeUpdate + delay
                 )
             );
 
             (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
                 LibTrancheRefillOrders.getTestHandleIoSource(
-                        vm,
-                        address(ORDERBOOK_SUPARSER),
-                        address(UNISWAP_WORDS),
-                        TRANCHE_SIZE_BASE_SELL,
-                        trancheSpaceBefore,  
-                        lastTimeUpdate,
-                        lastTimeUpdate + delay
+                    vm,
+                    address(ORDERBOOK_SUPARSER),
+                    address(UNISWAP_WORDS),
+                    TRANCHE_SIZE_BASE_BUY,
+                    trancheSpaceBefore,
+                    lastTimeUpdate,
+                    lastTimeUpdate + delay
                 )
             );
-            (,,address handleIoExpression,) = EXPRESSION_DEPLOYER.deployExpression2(bytecode, constants);
+            (,, address handleIoExpression,) = EXPRESSION_DEPLOYER.deployExpression2(bytecode, constants);
 
-            buyOrderContext[4][4] = outputTokenTraded ;
-            uint256 trancheSpaceAfter = trancheSpaceBefore + outputTokenTraded.fixedPointDiv(calculateTrancheStack[0],Math.Rounding.Down);
-            
-            if(trancheSpaceAfter < (trancheSpaceBefore + TRANCHE_SPACE_MIN_DIFF)) 
+            buyOrderContext[4][4] = outputTokenTraded;
+            uint256 trancheSpaceAfter =
+                trancheSpaceBefore + outputTokenTraded.fixedPointDiv(calculateTrancheStack[0], Math.Rounding.Down);
+
+            if (trancheSpaceAfter < (trancheSpaceBefore + TRANCHE_SPACE_MIN_DIFF)) {
                 vm.expectRevert(bytes("Minimum trade size not met."));
+            }
 
             IInterpreterV2(INTERPRETER).eval2(
                 IInterpreterStoreV1(address(STORE)),
@@ -331,65 +343,7 @@ contract XBlockTrancheStratRefillTest is XBlockStratUtil {
                 LibEncodedDispatch.encode2(handleIoExpression, SourceIndexV2.wrap(0), type(uint16).max),
                 buyOrderContext,
                 new uint256[](0)
-            ); 
-        }        
-    }
-
-    function testBuyHandleIo(
-        uint256 outputTokenTraded,
-        uint256 trancheSpaceBefore,
-        uint256 delay
-    ) public { 
-        outputTokenTraded = bound(outputTokenTraded,1e10,1000e18);
-        trancheSpaceBefore = bound(trancheSpaceBefore,0,100e18);
-        delay = bound(delay, 1,86400);
-        uint256 lastTimeUpdate = block.timestamp;
-
-        FullyQualifiedNamespace namespace =
-                LibNamespace.qualifyNamespace(StateNamespace.wrap(uint256(uint160(ORDER_OWNER))), address(ORDERBOOK));
-
-        uint256[][] memory buyOrderContext = getBuyOrderContext(12345); 
-        buyOrderContext[4][1] = 18; 
-
-        {
-            uint256[] memory calculateTrancheStack = eval(
-            LibTrancheRefillOrders.getTestCalculateTrancheSource(
-                        vm,
-                        address(ORDERBOOK_SUPARSER),
-                        address(UNISWAP_WORDS),
-                        TRANCHE_SIZE_BASE_BUY,
-                        trancheSpaceBefore,
-                        lastTimeUpdate,
-                        lastTimeUpdate + delay
-                )
             );
-
-            (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(
-                LibTrancheRefillOrders.getTestHandleIoSource(
-                        vm,
-                        address(ORDERBOOK_SUPARSER),
-                        address(UNISWAP_WORDS),
-                        TRANCHE_SIZE_BASE_BUY,
-                        trancheSpaceBefore,  
-                        lastTimeUpdate,
-                        lastTimeUpdate + delay
-                )
-            );
-            (,,address handleIoExpression,) = EXPRESSION_DEPLOYER.deployExpression2(bytecode, constants);
-
-            buyOrderContext[4][4] = outputTokenTraded ;
-            uint256 trancheSpaceAfter = trancheSpaceBefore + outputTokenTraded.fixedPointDiv(calculateTrancheStack[0],Math.Rounding.Down);
-            
-            if(trancheSpaceAfter < (trancheSpaceBefore + TRANCHE_SPACE_MIN_DIFF)) 
-                vm.expectRevert(bytes("Minimum trade size not met."));
-
-            IInterpreterV2(INTERPRETER).eval2(
-                IInterpreterStoreV1(address(STORE)),
-                namespace,
-                LibEncodedDispatch.encode2(handleIoExpression, SourceIndexV2.wrap(0), type(uint16).max),
-                buyOrderContext,
-                new uint256[](0)
-            ); 
-        }        
+        }
     }
 }

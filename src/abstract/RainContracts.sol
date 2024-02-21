@@ -29,15 +29,10 @@ import {IOrderBookV3ArbOrderTaker} from "rain.orderbook/src/interface/unstable/I
 import {EvaluableConfigV3, SignedContextV1} from "rain.interpreter/interface/IInterpreterCallerV2.sol";
 import {OrderBookV3ArbOrderTakerConfigV1} from "rain.orderbook/src/abstract/OrderBookV3ArbOrderTaker.sol";
 import {ICloneableFactoryV2} from "src/interface/ICloneableFactoryV2.sol";
-import {
-    IOrderBookV3,
-    ROUTE_PROCESSOR
-} from "src/XBlockStratTrancheRefill.sol";
+import {IOrderBookV3, ROUTE_PROCESSOR} from "src/XBlockStratTrancheRefill.sol";
 import "rain.uniswap/src/lib/v3/LibDeploy.sol";
 
-
 abstract contract RainContracts {
-
     IParserV1 public PARSER;
     IInterpreterV2 public INTERPRETER;
     IInterpreterStoreV2 public STORE;
@@ -61,12 +56,7 @@ abstract contract RainContracts {
         INTERPRETER = new RainterpreterNPE2();
     }
 
-    function deployExpressionDeployer(
-        Vm vm,
-        address interpreter,
-        address store,
-        address parser
-    ) public {
+    function deployExpressionDeployer(Vm vm, address interpreter, address store, address parser) public {
         bytes memory constructionMeta = vm.readFileBinary(
             "lib/rain.orderbook/lib/rain.interpreter/meta/RainterpreterExpressionDeployerNPE2.rain.meta"
         );
@@ -76,7 +66,7 @@ abstract contract RainContracts {
                 address(interpreter), address(store), address(parser), constructionMeta
             )
         );
-    } 
+    }
 
     function deployOrderBook() public {
         ORDERBOOK = new OrderBook();
@@ -91,7 +81,7 @@ abstract contract RainContracts {
         UNISWAP_WORDS = LibDeploy.newUniswapWords(vm);
     }
 
-    function deployArbInstance(Vm vm,address cloneFactory) public {
+    function deployArbInstance(Vm vm, address cloneFactory) public {
         ARB_IMPLEMENTATION = new RouteProcessorOrderBookV3ArbOrderTaker();
         CLONE_FACTORY = ICloneableFactoryV2(cloneFactory);
 
