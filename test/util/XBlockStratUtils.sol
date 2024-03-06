@@ -55,16 +55,17 @@ contract XBlockStratUtil is Test, RainContracts {
 
     function setUp() public {
         selectEthFork();
-        PARSER = IParserV1(0x1dD25717D60E64a14D31676d37cEd01e11C12579);
-        INTERPRETER = IInterpreterV2(0x1878AE5312B94c64d26FA51d89eFa103Be246A17);
-        STORE = IInterpreterStoreV2(0xc357C73fF148d68316F5bAE7248B17F5CF981bE9);
-        EXPRESSION_DEPLOYER = IExpressionDeployerV3(0x3e879Ba59434241Daeff05373037bB1cd7Ff1d22);
+
+        deployParser();
+        deployStore();
+        deployInterpreter();
+
+        deployExpressionDeployer(vm, address(INTERPRETER), address(STORE), address(PARSER));
+        deployOrderBookSubparser();
+        deployUniswapWords(vm);
         ORDERBOOK = IOrderBookV3(0xf1224A483ad7F1E9aA46A8CE41229F32d7549A74);
-        ORDERBOOK_SUPARSER = ISubParserV2(0x24B1382A59A61b7512Cc8be50873A4C47B64d046);
-        UNISWAP_WORDS = ISubParserV2(0x45DFd7c02DB274A5B64ff0295c546bF07AD238eB);
         ARB_IMPLEMENTATION = IOrderBookV3ArbOrderTaker(0x16F53FF328748B41b10dc104A97c22E8A94F1059);
         ARB_INSTANCE = IOrderBookV3ArbOrderTaker(0xC6b96bC30306c3DffbaAebeBa86ca08498832F6d);
-
     }
 
     function xBlockIo() internal pure returns (IO memory) {
@@ -166,8 +167,6 @@ contract XBlockStratUtil is Test, RainContracts {
         ROUTE_PROCESSOR.processRoute(inputToken, amountIn, outputToken, 0, EXTERNAL_EOA, decodedRoute);
         vm.stopPrank();
     }
-
-    
 
     function getSellOrderContext(uint256 orderHash) internal view returns (uint256[][] memory context) {
         // Sell Order Context
@@ -276,34 +275,33 @@ contract XBlockStratUtil is Test, RainContracts {
         uint256 mask = (2 ** length) - 1;
         output = (input >> startBit) & mask;
     }
-    
-    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
-            if (_i == 0) {
-                return "0";
-            }
-            uint j = _i;
-            uint len;
-            while (j != 0) {
-                len++;
-                j /= 10;
-            }
-            bytes memory bstr = new bytes(len);
-            uint k = len;
-            while (_i != 0) {
-                k = k-1;
-                uint8 temp = (48 + uint8(_i - _i / 10 * 10));
-                bytes1 b1 = bytes1(temp);
-                bstr[k] = b1;
-                _i /= 10;
-            }
-            return string(bstr);
+
+    function uint2str(uint256 _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint256 k = len;
+        while (_i != 0) {
+            k = k - 1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
 
     function eval(bytes memory rainlang) public returns (uint256[] memory) {
         (bytes memory bytecode, uint256[] memory constants) = PARSER.parse(rainlang);
-        (,,address expression,) = EXPRESSION_DEPLOYER.deployExpression2(bytecode, constants);
+        (,, address expression,) = EXPRESSION_DEPLOYER.deployExpression2(bytecode, constants);
         return evalDeployedExpression(expression, ORDER_HASH);
-
     }
 
     function evalDeployedExpression(address expression, bytes32 orderHash) public view returns (uint256[] memory) {
@@ -321,9 +319,8 @@ contract XBlockStratUtil is Test, RainContracts {
         );
         return stack;
     }
-    
 
-    function buildContext(bytes32  orderHash) public pure returns (uint256[][] memory) {
+    function buildContext(bytes32 orderHash) public pure returns (uint256[][] memory) {
         uint256[][] memory context = new uint256[][](5);
 
         {
@@ -357,4 +354,3 @@ contract XBlockStratUtil is Test, RainContracts {
         return context;
     }
 }
-

@@ -2,11 +2,10 @@
 pragma solidity =0.8.19;
 
 import {console2, Test} from "forge-std/Test.sol";
-import { POOL, LOCK_TOKEN, WETH_TOKEN, LOCK_OWNER } from "src/XBlockStratTrancheRefill.sol";
-import { LibDeploy } from "rain.uniswap/src/lib/v3/LibDeploy.sol";
+import {POOL, LOCK_TOKEN, WETH_TOKEN, LOCK_OWNER} from "src/XBlockStratTrancheRefill.sol";
+import {LibDeploy} from "rain.uniswap/src/lib/v3/LibDeploy.sol";
 
 interface IQuoter {
-
     struct QuoteExactInputSingleParams {
         address tokenIn;
         address tokenOut;
@@ -19,12 +18,11 @@ interface IQuoter {
         external
         view
         returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate);
-
 }
 
-interface IHoudiniSwapToken { 
+interface IHoudiniSwapToken {
     function launch() external;
-    function setAutomatedMarketMakerPair(address account,bool value) external;
+    function setAutomatedMarketMakerPair(address account, bool value) external;
 }
 
 contract UniswapV3Modelling is Test {
@@ -37,7 +35,7 @@ contract UniswapV3Modelling is Test {
     }
 
     function test_exportPrices() public {
-        string memory file = './test/csvs/pool-modelling.csv';
+        string memory file = "./test/csvs/pool-modelling.csv";
         if (vm.exists(file)) vm.removeFile(file);
 
         vm.writeLine(file, "LOCK/ETH price");
@@ -52,23 +50,18 @@ contract UniswapV3Modelling is Test {
             uint256 resolution = 1000;
             uint256 baseAmount = ethusd * 850000; // at this point LOCK will be worth $1.10
             uint256 amountIn = ethusd * resolution * i + baseAmount;
-            (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate) = quoter.quoteExactInputSingle(
+            (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate) = quoter
+                .quoteExactInputSingle(
                 IQuoter.QuoteExactInputSingleParams(
-                    address(WETH_TOKEN),
-                    address(LOCK_TOKEN),
-                    amountIn,
-                    uint24(10000),
-                    0
+                    address(WETH_TOKEN), address(LOCK_TOKEN), amountIn, uint24(10000), 0
                 )
             );
 
-            vm.writeLine(file, string.concat(
-                uint2str(price(sqrtPriceX96After)*usdeth/1e18)
-            ));
+            vm.writeLine(file, string.concat(uint2str(price(sqrtPriceX96After) * usdeth / 1e18)));
         }
     }
 
-    function launchLockToken() public { 
+    function launchLockToken() public {
         vm.startPrank(LOCK_OWNER);
         IHoudiniSwapToken(address(LOCK_TOKEN)).launch();
         // IHoudiniSwapToken(address(LOCK_TOKEN)).setAutomatedMarketMakerPair(POOL,true);
@@ -76,23 +69,23 @@ contract UniswapV3Modelling is Test {
     }
 
     function price(uint256 sqrtPriceX96) public pure returns (uint256) {
-        return ((sqrtPriceX96 * 1e18) / (2**96))**2/1e18;
+        return ((sqrtPriceX96 * 1e18) / (2 ** 96)) ** 2 / 1e18;
     }
 
-        function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+    function uint2str(uint256 _i) internal pure returns (string memory _uintAsString) {
         if (_i == 0) {
             return "0";
         }
-        uint j = _i;
-        uint len;
+        uint256 j = _i;
+        uint256 len;
         while (j != 0) {
             len++;
             j /= 10;
         }
         bytes memory bstr = new bytes(len);
-        uint k = len;
+        uint256 k = len;
         while (_i != 0) {
-            k = k-1;
+            k = k - 1;
             uint8 temp = (48 + uint8(_i - _i / 10 * 10));
             bytes1 b1 = bytes1(temp);
             bstr[k] = b1;
